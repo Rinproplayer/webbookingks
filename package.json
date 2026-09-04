@@ -1,0 +1,10 @@
+{
+  "name": "hostay-workspace",
+  "version": "1.0.0",
+  "description": "Hostay Da Nang - Hotel & Homestay Online Booking and Management System",
+  "scripts": {
+    "server": "npm --prefix server start",
+    "client": "npm --prefix client dev",
+    "build": "npm --prefix client run build"
+  }
+}
