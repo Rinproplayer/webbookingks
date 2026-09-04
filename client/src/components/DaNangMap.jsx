@@ -31,12 +31,21 @@ const createCustomMarker = (isHotel) => {
 const hotelPin = createCustomMarker(true);
 const destPin = createCustomMarker(false);
 
-// Auto Fit Bounds Component
+// Auto Fit Bounds & Invalidate Size Component
 function MapBoundsUpdater({ items, center, zoom }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!items || items.length === 0) return;
+    // Force Leaflet recalculate container size to avoid grey empty tiles
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+
+    if (!items || items.length === 0) {
+      if (center) map.setView(center, zoom || 12);
+      return () => clearTimeout(timer);
+    }
+
     const validPositions = items
       .filter(it => it?.location?.lat && it?.location?.lng)
       .map(it => [it.location.lat, it.location.lng]);
@@ -45,10 +54,12 @@ function MapBoundsUpdater({ items, center, zoom }) {
       map.setView(validPositions[0], zoom || 14, { animate: true });
     } else if (validPositions.length > 1) {
       const bounds = L.latLngBounds(validPositions);
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+      map.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
     } else if (center) {
       map.setView(center, zoom || 12);
     }
+
+    return () => clearTimeout(timer);
   }, [items, center, zoom, map]);
 
   return null;
@@ -62,17 +73,19 @@ export default function DaNangMap({
   height = '440px',
   title = ''
 }) {
-  // Tile Layer: 'street' (OpenStreetMap) or 'satellite' (Esri World Imagery)
+  // Tile Layer: 'street' (Google Maps Street) or 'satellite' (Google Maps Hybrid Satellite)
   const [layerType, setLayerType] = useState('street');
 
   const tileLayers = {
     street: {
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      attribution: '&copy; OpenStreetMap contributors'
+      url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Maps'
     },
     satellite: {
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Earth & Imagery'
     }
   };
 
@@ -127,6 +140,8 @@ export default function DaNangMap({
           key={layerType}
           attribution={tileLayers[layerType].attribution}
           url={tileLayers[layerType].url}
+          subdomains={tileLayers[layerType].subdomains}
+          maxZoom={20}
         />
 
         <MapBoundsUpdater items={items} center={center} zoom={zoom} />
