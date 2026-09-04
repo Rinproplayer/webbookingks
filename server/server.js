@@ -36,6 +36,7 @@ app.use('/api/vouchers', require('./routes/voucherRoutes'));
 app.use('/api/checkin', require('./routes/checkinRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
+app.use('/api/banners', require('./routes/bannerRoutes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

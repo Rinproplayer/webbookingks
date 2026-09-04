@@ -23,6 +23,9 @@ export default function Home() {
   const [featuredDestinations, setFeaturedDestinations] = useState([]);
   const [featuredHotels, setFeaturedHotels] = useState([]);
   const [vouchers, setVouchers] = useState([]);
+  const [heroBanners, setHeroBanners] = useState([]);
+  const [activeBannerIdx, setActiveBannerIdx] = useState(0);
+  const [promoBanners, setPromoBanners] = useState([]);
 
   // Search form state
   const [searchDistrict, setSearchDistrict] = useState('all');
@@ -41,20 +44,44 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [destRes, hotelRes, voucherRes] = await Promise.all([
+        const [destRes, hotelRes, voucherRes, bannerRes] = await Promise.all([
           api.get('/destinations?featured=true'),
           api.get('/hotels?featured=true'),
-          api.get('/vouchers')
+          api.get('/vouchers'),
+          api.get('/banners')
         ]);
         if (destRes.data.success) setFeaturedDestinations(destRes.data.destinations.slice(0, 4));
         if (hotelRes.data.success) setFeaturedHotels(hotelRes.data.hotels.slice(0, 4));
         if (voucherRes.data.success) setVouchers(voucherRes.data.vouchers.slice(0, 3));
+        if (bannerRes.data.success) {
+          const heroes = bannerRes.data.banners.filter(b => b.position === 'hero');
+          const promos = bannerRes.data.banners.filter(b => b.position === 'promo');
+          setHeroBanners(heroes);
+          setPromoBanners(promos);
+        }
       } catch (err) {
         console.error('Error loading home data', err);
       }
     };
     fetchData();
   }, []);
+
+  // Auto rotate banner if multiple exist
+  useEffect(() => {
+    if (heroBanners.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveBannerIdx(prev => (prev + 1) % heroBanners.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [heroBanners]);
+
+  const currentHero = heroBanners[activeBannerIdx] || {
+    title: 'Khám phá Đà Nẵng & Đặt phòng',
+    highlightText: 'Tiết Kiệm Với Check-in QR',
+    subtitle: 'Kết nối trực tiếp hàng trăm khách sạn, resort ven biển Mỹ Khê và homestay sông Hàn. Không phí trung gian, nhận phòng không chạm nhanh chóng.',
+    badge: 'NỀN TẢNG ĐẶT PHÒNG CHUYÊN BIỆT ĐÀ NẴNG 2026',
+    imageUrl: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=1920&q=80'
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -70,30 +97,53 @@ export default function Home() {
     <div className="space-y-20 pb-20">
       
       {/* Hero Section */}
-      <div className="relative min-h-[600px] flex items-center justify-center bg-slate-900 overflow-hidden">
-        {/* Background image overlay */}
+      <div className="relative min-h-[620px] flex items-center justify-center bg-slate-900 overflow-hidden">
+        {/* Background image overlay with smooth transition */}
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-40 scale-105 transition-transform duration-1000"
-          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=1920&q=80')` }}
+          key={currentHero.imageUrl}
+          className="absolute inset-0 bg-cover bg-center opacity-40 scale-105 transition-all duration-1000 animate-in fade-in"
+          style={{ backgroundImage: `url('${currentHero.imageUrl}')` }}
         ></div>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
 
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center space-y-8 z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/20 border border-teal-400/40 text-teal-300 text-xs font-bold backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-            NỀN TẢNG ĐẶT PHÒNG CHUYÊN BIỆT ĐÀ NẴNG 2026
-          </div>
+          {currentHero.badge && (
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/20 border border-teal-400/40 text-teal-300 text-xs font-bold backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+              {currentHero.badge}
+            </div>
+          )}
 
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
-            Khám phá Đà Nẵng & Đặt phòng <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-300 to-amber-300">
-              Tiết Kiệm Với Check-in QR
-            </span>
+            {currentHero.title} <br className="hidden sm:inline" />
+            {currentHero.highlightText && (
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-300 to-amber-300">
+                {currentHero.highlightText}
+              </span>
+            )}
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
-            Kết nối trực tiếp hàng trăm khách sạn, resort ven biển Mỹ Khê và homestay sông Hàn. Không phí trung gian, nhận phòng không chạm nhanh chóng.
-          </p>
+          {currentHero.subtitle && (
+            <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+              {currentHero.subtitle}
+            </p>
+          )}
+
+          {/* Dots Indicator for Hero Banners */}
+          {heroBanners.length > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-1">
+              {heroBanners.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveBannerIdx(idx)}
+                  className={`h-2 rounded-full transition-all ${
+                    idx === activeBannerIdx ? 'w-8 bg-teal-400' : 'w-2 bg-white/40 hover:bg-white/70'
+                  }`}
+                  aria-label={`Slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Search Widget */}
           <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-2xl border border-slate-200/80 max-w-4xl mx-auto text-left">
