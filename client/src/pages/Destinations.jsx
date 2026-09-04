@@ -184,18 +184,18 @@ export default function Destinations() {
           {destinations.map((d) => (
             <div 
               key={d._id} 
-              className="group bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+              className="group bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 <div className="relative h-56 overflow-hidden">
                   <img 
                     src={d.coverImage} 
                     alt={d.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent"></div>
 
-                  <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider">
+                  <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm">
                     {d.district}
                   </div>
 
@@ -207,7 +207,7 @@ export default function Destinations() {
                   </button>
 
                   <div className="absolute bottom-3 left-3 right-3 text-white">
-                    <span className="text-[11px] font-bold text-teal-300 block mb-0.5">
+                    <span className="text-[11px] font-black text-amber-300 block mb-0.5">
                       Vé: {d.ticketPrice}
                     </span>
                     <h3 className="text-lg font-black leading-tight group-hover:text-teal-300 transition-colors line-clamp-1">

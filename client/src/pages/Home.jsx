@@ -13,9 +13,13 @@ import {
   Sparkles, 
   ArrowRight,
   CheckCircle2,
-  Percent
+  Percent,
+  Navigation,
+  Layers,
+  Map as MapIcon
 } from 'lucide-react';
 import api from '../services/api';
+import DaNangMap from '../components/DaNangMap';
 import { formatVND, DANANG_DISTRICTS } from '../utils/formatters';
 
 export default function Home() {
@@ -26,6 +30,7 @@ export default function Home() {
   const [heroBanners, setHeroBanners] = useState([]);
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [promoBanners, setPromoBanners] = useState([]);
+  const [allMapItems, setAllMapItems] = useState([]);
 
   // Search form state
   const [searchDistrict, setSearchDistrict] = useState('all');
@@ -50,8 +55,8 @@ export default function Home() {
           api.get('/vouchers'),
           api.get('/banners')
         ]);
-        if (destRes.data.success) setFeaturedDestinations(destRes.data.destinations.slice(0, 4));
-        if (hotelRes.data.success) setFeaturedHotels(hotelRes.data.hotels.slice(0, 4));
+        if (destRes.data.success) setFeaturedDestinations(destRes.data.destinations);
+        if (hotelRes.data.success) setFeaturedHotels(hotelRes.data.hotels);
         if (voucherRes.data.success) setVouchers(voucherRes.data.vouchers.slice(0, 3));
         if (bannerRes.data.success) {
           const heroes = bannerRes.data.banners.filter(b => b.position === 'hero');
@@ -59,6 +64,11 @@ export default function Home() {
           setHeroBanners(heroes);
           setPromoBanners(promos);
         }
+
+        // Combine for Interactive Home Map
+        const dests = destRes.data.success ? destRes.data.destinations : [];
+        const hots = hotelRes.data.success ? hotelRes.data.hotels : [];
+        setAllMapItems([...hots, ...dests]);
       } catch (err) {
         console.error('Error loading home data', err);
       }
@@ -290,25 +300,25 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredHotels.map((h) => (
-              <div key={h._id} className="group bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
+              <div key={h._id} className="group bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
                 <div>
                   <div className="relative h-48 overflow-hidden">
                     <img 
                       src={h.coverImage} 
                       alt={h.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
-                    <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
+                    <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">
                       <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                       {h.rating?.average || 4.8}
                     </div>
-                    <div className="absolute top-3 right-3 bg-teal-600 text-white px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase">
+                    <div className="absolute top-3 right-3 bg-teal-600 text-white px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm">
                       {h.type}
                     </div>
                   </div>
 
                   <div className="p-5 space-y-2">
-                    <p className="text-xs text-slate-500 flex items-center gap-1 truncate">
+                    <p className="text-xs text-slate-500 flex items-center gap-1 truncate font-medium">
                       <MapPin className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                       {h.district}, Đà Nẵng
                     </p>
@@ -331,7 +341,7 @@ export default function Home() {
                   </div>
                   <Link 
                     to={`/hotels/${h._id}`}
-                    className="px-4 py-2 bg-slate-900 group-hover:bg-teal-600 text-white text-xs font-bold rounded-xl transition-colors"
+                    className="px-4 py-2 bg-slate-900 group-hover:bg-teal-600 text-white text-xs font-bold rounded-xl transition-all shadow-md group-hover:shadow-teal-600/30 group-hover:scale-105"
                   >
                     Xem phòng
                   </Link>
@@ -360,35 +370,75 @@ export default function Home() {
               <Link 
                 key={d._id} 
                 to={`/destinations/${d.slug || d._id}`}
-                className="group relative rounded-3xl overflow-hidden h-80 shadow-md hover:shadow-xl transition-all duration-300 block"
+                className="group relative rounded-3xl overflow-hidden h-80 shadow-md hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 block border border-slate-200/40"
               >
                 <img 
                   src={d.coverImage} 
                   alt={d.name} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/30 to-transparent"></div>
 
-                <div className="absolute top-3 left-3 bg-white/20 backdrop-blur-md border border-white/30 text-white px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase">
+                <div className="absolute top-3 left-3 bg-white/20 backdrop-blur-md border border-white/30 text-white px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm">
                   {d.district}
                 </div>
 
-                <div className="absolute bottom-4 left-4 right-4 text-white space-y-1">
+                <div className="absolute bottom-4 left-4 right-4 text-white space-y-1.5">
                   <h3 className="text-base font-black leading-snug group-hover:text-teal-300 transition-colors">
                     {d.name}
                   </h3>
-                  <p className="text-xs text-slate-300 line-clamp-2">
+                  <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
                     {d.description}
                   </p>
-                  <div className="pt-1 flex items-center justify-between text-[11px] text-amber-300 font-semibold">
+                  <div className="pt-1 flex items-center justify-between text-[11px] text-amber-300 font-bold border-t border-white/10">
                     <span>{d.ticketPrice}</span>
-                    <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    <span className="flex items-center gap-1 group-hover:translate-x-1.5 transition-transform text-white group-hover:text-teal-300">
                       Xem chi tiết <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   </div>
                 </div>
               </Link>
             ))}
+          </div>
+        </div>
+
+        {/* Interactive Da Nang Tourism & Accommodation Map */}
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-teal-600 flex items-center gap-1.5">
+                <MapIcon className="w-4 h-4" /> Định Vị Trực Quan
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Bản Đồ Số Du Lịch & Khách Sạn Đà Nẵng
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Khám phá vị trí các danh thắng nổi tiếng và các khách sạn, homestay lân cận để lên lộ trình du lịch hoàn hảo.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link 
+                to="/destinations" 
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
+              >
+                Xem cẩm nang
+              </Link>
+              <Link 
+                to="/hotels" 
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-teal-600/20"
+              >
+                Tìm phòng gần điểm đến
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative">
+            <DaNangMap
+              items={allMapItems}
+              center={[16.0648, 108.23]}
+              zoom={12}
+              height="480px"
+            />
           </div>
         </div>
 

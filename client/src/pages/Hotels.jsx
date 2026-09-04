@@ -310,15 +310,15 @@ export default function Hotels() {
               {hotels.map((hotel) => (
                 <div 
                   key={hotel._id} 
-                  className="bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col sm:flex-row gap-5"
+                  className="group bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-5 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col sm:flex-row gap-5"
                 >
                   <div className="relative w-full sm:w-60 h-48 sm:h-auto rounded-2xl overflow-hidden shrink-0">
                     <img 
                       src={hotel.coverImage} 
                       alt={hotel.name} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
-                    <div className="absolute top-2.5 left-2.5 bg-slate-900/80 backdrop-blur-md text-white px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                    <div className="absolute top-2.5 left-2.5 bg-slate-900/80 backdrop-blur-md text-white px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm">
                       {hotel.type}
                     </div>
                   </div>
