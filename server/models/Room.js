@@ -13,7 +13,7 @@ const roomSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['Standard', 'Superior', 'Deluxe', 'Suite', 'Family', 'Dorm'],
+    enum: ['Standard', 'Superior', 'Deluxe', 'Suite', 'Family', 'Dorm', 'Villa', 'Studio'],
     default: 'Deluxe'
   },
   standardGuests: {
