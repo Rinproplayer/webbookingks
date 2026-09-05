@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Building2, 
   Compass, 
@@ -13,11 +14,14 @@ import {
   ShieldAlert, 
   QrCode, 
   Heart,
-  ChevronDown
+  ChevronDown,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -32,7 +36,7 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all">
+    <header className="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         
         {/* Logo */}
@@ -42,10 +46,10 @@ export default function Navbar() {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-2xl font-black tracking-tight text-slate-900">Hos<span className="text-teal-600">tay</span></span>
-              <span className="bg-teal-100 text-teal-800 text-[10px] font-bold px-1.5 py-0.5 rounded border border-teal-200">ĐÀ NẴNG</span>
+              <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Hos<span className="text-teal-600 dark:text-teal-400">tay</span></span>
+              <span className="bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800">ĐÀ NẴNG</span>
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">Đặt phòng & Du lịch Đà Nẵng</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Đặt phòng & Du lịch Đà Nẵng</p>
           </div>
         </Link>
 
@@ -53,28 +57,38 @@ export default function Navbar() {
         <nav className="hidden md:flex items-center gap-1 font-medium text-sm">
           <Link 
             to="/" 
-            className={`px-3.5 py-2 rounded-lg transition-colors ${isActive('/') ? 'text-teal-700 bg-teal-50 font-semibold' : 'text-slate-600 hover:text-teal-600 hover:bg-slate-50'}`}
+            className={`px-3.5 py-2 rounded-lg transition-colors ${isActive('/') ? 'text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/50 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
           >
             Trang chủ
           </Link>
           <Link 
             to="/destinations" 
-            className={`px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors ${isActive('/destinations') ? 'text-teal-700 bg-teal-50 font-semibold' : 'text-slate-600 hover:text-teal-600 hover:bg-slate-50'}`}
+            className={`px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors ${isActive('/destinations') ? 'text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/50 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
           >
-            <Compass className="w-4 h-4 text-teal-600" />
+            <Compass className="w-4 h-4 text-teal-600 dark:text-teal-400" />
             Khám phá Đà Nẵng
           </Link>
           <Link 
             to="/hotels" 
-            className={`px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors ${isActive('/hotels') ? 'text-teal-700 bg-teal-50 font-semibold' : 'text-slate-600 hover:text-teal-600 hover:bg-slate-50'}`}
+            className={`px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors ${isActive('/hotels') ? 'text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/50 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
           >
-            <Building2 className="w-4 h-4 text-teal-600" />
+            <Building2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
             Khách sạn & Homestay
           </Link>
         </nav>
 
-        {/* Right Section / User actions */}
+        {/* Right Section / User actions & Theme Toggle */}
         <div className="hidden md:flex items-center gap-3">
+          
+          {/* Dark / Light Mode Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all hover:scale-105"
+            aria-label="Đổi giao diện Sáng / Tối"
+            title={isDark ? "Chuyển sang chế độ Sáng" : "Chuyển sang chế độ Tối"}
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+          </button>
           {user ? (
             <div className="relative">
               <button 
@@ -179,11 +193,18 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile menu button */}
+        {/* Mobile menu button & Theme toggle */}
         <div className="flex md:hidden items-center gap-2">
           <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            aria-label="Đổi giao diện"
+          >
+            {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+          </button>
+          <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100"
+            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>

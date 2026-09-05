@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Compass, 
@@ -16,6 +16,8 @@ import {
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import DaNangMap from '../components/DaNangMap';
+import ImageLightbox from '../components/ImageLightbox';
+import { GridCardSkeleton } from '../components/SkeletonCard';
 import { DANANG_DISTRICTS, DESTINATION_CATEGORIES } from '../utils/formatters';
 
 export default function Destinations() {
@@ -28,6 +30,11 @@ export default function Destinations() {
   const [selectedDistrict, setSelectedDistrict] = useState(searchParams.get('district') || 'all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'map'
+
+  // Fullscreen Lightbox State
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => {
     const fetchDestinations = async () => {
@@ -97,7 +104,7 @@ export default function Destinations() {
               className={`px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
                 activeCategory === cat.id
                   ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
               {cat.label}
@@ -106,7 +113,7 @@ export default function Destinations() {
         </div>
 
         {/* Filter Toolbar */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 transition-colors">
           
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {/* Search Input */}
@@ -117,7 +124,7 @@ export default function Destinations() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm tên địa điểm, bãi biển..."
-                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:border-teal-500"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 dark:border-slate-700 bg-transparent dark:text-white rounded-xl outline-none focus:border-teal-500"
               />
             </div>
 
@@ -125,7 +132,7 @@ export default function Destinations() {
             <select
               value={selectedDistrict}
               onChange={(e) => setSelectedDistrict(e.target.value)}
-              className="py-2 px-3 text-xs font-semibold text-slate-700 border border-slate-200 rounded-xl outline-none bg-slate-50 cursor-pointer"
+              className="py-2 px-3 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl outline-none bg-slate-50 dark:bg-slate-800 cursor-pointer"
             >
               <option value="all">Tất cả quận/huyện</option>
               {DANANG_DISTRICTS.map((d) => (
@@ -139,7 +146,7 @@ export default function Destinations() {
             <button
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                viewMode === 'grid' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                viewMode === 'grid' ? 'bg-slate-900 dark:bg-teal-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               <Grid className="w-4 h-4" /> Danh sách
@@ -147,7 +154,7 @@ export default function Destinations() {
             <button
               onClick={() => setViewMode('map')}
               className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
-                viewMode === 'map' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                viewMode === 'map' ? 'bg-teal-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               <MapIcon className="w-4 h-4" /> Bản đồ số
@@ -159,24 +166,25 @@ export default function Destinations() {
 
       {/* Content View */}
       {loading ? (
-        <div className="text-center py-20">
-          <div className="animate-spin w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full mx-auto"></div>
-          <p className="text-xs text-slate-500 mt-2">Đang tải danh lam thắng cảnh Đà Nẵng...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <GridCardSkeleton key={n} />
+          ))}
         </div>
       ) : destinations.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-slate-200">
+        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
           <Compass className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm font-bold text-slate-700">Không tìm thấy địa điểm nào phù hợp bộ lọc</p>
+          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Không tìm thấy địa điểm nào phù hợp bộ lọc</p>
           <button 
             onClick={() => { setActiveCategory('all'); setSelectedDistrict('all'); setSearchQuery(''); }}
-            className="mt-3 text-xs text-teal-600 font-bold hover:underline"
+            className="mt-3 text-xs text-teal-600 dark:text-teal-400 font-bold hover:underline"
           >
             Xóa bộ lọc tìm kiếm
           </button>
         </div>
       ) : viewMode === 'map' ? (
         <div className="space-y-4">
-          <p className="text-xs text-slate-500">Hiển thị {destinations.length} địa điểm trên bản đồ Đà Nẵng</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Hiển thị {destinations.length} địa điểm trên bản đồ Đà Nẵng</p>
           <DaNangMap items={destinations} type="destinations" height="520px" />
         </div>
       ) : (
@@ -184,10 +192,18 @@ export default function Destinations() {
           {destinations.map((d) => (
             <div 
               key={d._id} 
-              className="group bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between"
+              className="group bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
-                <div className="relative h-56 overflow-hidden">
+                <div 
+                  className="relative h-56 overflow-hidden cursor-pointer"
+                  onClick={() => {
+                    const imgs = [d.coverImage, ...(d.images || [])].filter(Boolean);
+                    setLightboxImages(imgs);
+                    setLightboxIndex(0);
+                    setLightboxOpen(true);
+                  }}
+                >
                   <img 
                     src={d.coverImage} 
                     alt={d.name} 
@@ -200,8 +216,11 @@ export default function Destinations() {
                   </div>
 
                   <button
-                    onClick={(e) => handleToggleWishlist(e, d._id)}
-                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-slate-700 hover:text-red-500 shadow-md transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleWishlist(e, d._id);
+                    }}
+                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-md flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-red-500 shadow-md transition-colors"
                   >
                     <Heart className={`w-4 h-4 ${isWishlisted(d._id) ? 'text-red-500 fill-red-500' : ''}`} />
                   </button>
@@ -217,14 +236,14 @@ export default function Destinations() {
                 </div>
 
                 <div className="p-5 space-y-3">
-                  <p className="text-xs text-slate-500 flex items-center gap-1.5 truncate">
-                    <MapPin className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 truncate font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
                     {d.address}
                   </p>
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
                     {d.description}
                   </p>
-                  <div className="pt-1 flex items-center gap-4 text-[11px] text-slate-500">
+                  <div className="pt-1 flex items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-slate-400" /> {d.openingHours}
                     </span>
@@ -232,13 +251,13 @@ export default function Destinations() {
                 </div>
               </div>
 
-              <div className="p-5 pt-0 border-t border-slate-100 flex items-center justify-between mt-2">
-                <span className="text-[11px] font-semibold text-slate-500">
+              <div className="p-5 pt-0 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between mt-2">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                   {d.bestTimeToVisit || 'Quanh năm'}
                 </span>
                 <Link
                   to={`/destinations/${d.slug || d._id}`}
-                  className="px-4 py-2 bg-slate-900 group-hover:bg-teal-600 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1"
+                  className="px-4 py-2 bg-slate-900 dark:bg-teal-600 dark:hover:bg-teal-700 group-hover:bg-teal-600 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-md hover:scale-105"
                 >
                   Xem cẩm nang <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
@@ -248,6 +267,14 @@ export default function Destinations() {
         </div>
       )}
 
+      {/* Fullscreen Lightbox Modal */}
+      <ImageLightbox
+        images={lightboxImages}
+        currentIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        onNavigate={(idx) => setLightboxIndex(idx)}
+      />
     </div>
   );
 }

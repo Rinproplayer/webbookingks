@@ -16,14 +16,20 @@ import {
   Percent,
   Navigation,
   Layers,
-  Map as MapIcon
+  Map as MapIcon,
+  Flame,
+  Clock,
+  Sparkle
 } from 'lucide-react';
 import api from '../services/api';
 import DaNangMap from '../components/DaNangMap';
+import ImageLightbox from '../components/ImageLightbox';
+import { GridCardSkeleton } from '../components/SkeletonCard';
 import { formatVND, DANANG_DISTRICTS } from '../utils/formatters';
 
 export default function Home() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [featuredDestinations, setFeaturedDestinations] = useState([]);
   const [featuredHotels, setFeaturedHotels] = useState([]);
   const [vouchers, setVouchers] = useState([]);
@@ -31,6 +37,14 @@ export default function Home() {
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
   const [promoBanners, setPromoBanners] = useState([]);
   const [allMapItems, setAllMapItems] = useState([]);
+
+  // Sticky Search Bar State
+  const [isSticky, setIsSticky] = useState(false);
+
+  // Fullscreen Lightbox State
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Search form state
   const [searchDistrict, setSearchDistrict] = useState('all');
@@ -46,8 +60,22 @@ export default function Home() {
   });
   const [guests, setGuests] = useState(2);
 
+  // Handle Scroll for Sticky Search Bar
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 480) {
+        setIsSticky(true);
+      } else {
+        setIsSticky(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const [destRes, hotelRes, voucherRes, bannerRes] = await Promise.all([
           api.get('/destinations?featured=true'),
@@ -71,6 +99,8 @@ export default function Home() {
         setAllMapItems([...hots, ...dests]);
       } catch (err) {
         console.error('Error loading home data', err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -155,73 +185,101 @@ export default function Home() {
             </div>
           )}
 
+          {/* Sticky Search Bar on Scroll */}
+          {isSticky && (
+            <div className="fixed top-20 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-xl py-3 px-4 animate-in slide-in-from-top-4 duration-300">
+              <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 overflow-x-auto flex-1 text-xs">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-800 dark:text-slate-200 shrink-0">
+                    <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                    <span>{searchDistrict === 'all' ? 'Toàn bộ Đà Nẵng' : searchDistrict}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-800 dark:text-slate-200 shrink-0">
+                    <Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                    <span>{checkInDate} → {checkOutDate}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-800 dark:text-slate-200 shrink-0">
+                    <Users className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                    <span>{guests} Khách</span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleSearchSubmit}
+                  className="px-5 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-black text-xs rounded-xl shadow-md hover:scale-105 transition-all shrink-0 flex items-center gap-1.5"
+                >
+                  <Search className="w-3.5 h-3.5" /> Tìm phòng
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Search Widget */}
-          <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-2xl border border-slate-200/80 max-w-4xl mx-auto text-left">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 max-w-4xl mx-auto text-left transition-colors">
             <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               
               {/* District */}
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70 hover:border-teal-400 transition-colors">
-                <label className="block text-[11px] font-bold text-slate-500 uppercase">Khu vực Đà Nẵng</label>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/70 dark:border-slate-700 hover:border-teal-400 transition-colors">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Khu vực Đà Nẵng</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <MapPin className="w-4 h-4 text-teal-600 shrink-0" />
+                  <MapPin className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
                   <select
                     value={searchDistrict}
                     onChange={(e) => setSearchDistrict(e.target.value)}
-                    className="w-full bg-transparent text-xs font-bold text-slate-900 outline-none cursor-pointer"
+                    className="w-full bg-transparent text-xs font-bold text-slate-900 dark:text-white outline-none cursor-pointer"
                   >
-                    <option value="all">Toàn bộ Đà Nẵng</option>
+                    <option value="all" className="dark:bg-slate-900">Toàn bộ Đà Nẵng</option>
                     {DANANG_DISTRICTS.map((d) => (
-                      <option key={d} value={d}>{d}</option>
+                      <option key={d} value={d} className="dark:bg-slate-900">{d}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               {/* Check-in */}
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70 hover:border-teal-400 transition-colors">
-                <label className="block text-[11px] font-bold text-slate-500 uppercase">Nhận phòng</label>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/70 dark:border-slate-700 hover:border-teal-400 transition-colors">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Nhận phòng</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <Calendar className="w-4 h-4 text-teal-600 shrink-0" />
+                  <Calendar className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
                   <input
                     type="date"
                     required
                     value={checkInDate}
                     onChange={(e) => setCheckInDate(e.target.value)}
-                    className="w-full bg-transparent text-xs font-bold text-slate-900 outline-none"
+                    className="w-full bg-transparent text-xs font-bold text-slate-900 dark:text-white outline-none"
                   />
                 </div>
               </div>
 
               {/* Check-out */}
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70 hover:border-teal-400 transition-colors">
-                <label className="block text-[11px] font-bold text-slate-500 uppercase">Trả phòng</label>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/70 dark:border-slate-700 hover:border-teal-400 transition-colors">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Trả phòng</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <Calendar className="w-4 h-4 text-teal-600 shrink-0" />
+                  <Calendar className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
                   <input
                     type="date"
                     required
                     value={checkOutDate}
                     onChange={(e) => setCheckOutDate(e.target.value)}
-                    className="w-full bg-transparent text-xs font-bold text-slate-900 outline-none"
+                    className="w-full bg-transparent text-xs font-bold text-slate-900 dark:text-white outline-none"
                   />
                 </div>
               </div>
 
               {/* Guests & Search Button */}
               <div className="flex items-center gap-2">
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70 flex-1 hover:border-teal-400 transition-colors">
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase">Khách</label>
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/70 dark:border-slate-700 flex-1 hover:border-teal-400 transition-colors">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Khách</label>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <Users className="w-4 h-4 text-teal-600 shrink-0" />
+                    <Users className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
                     <select
                       value={guests}
                       onChange={(e) => setGuests(Number(e.target.value))}
-                      className="w-full bg-transparent text-xs font-bold text-slate-900 outline-none cursor-pointer"
+                      className="w-full bg-transparent text-xs font-bold text-slate-900 dark:text-white outline-none cursor-pointer"
                     >
-                      <option value={1}>1 Khách</option>
-                      <option value={2}>2 Khách</option>
-                      <option value={4}>4 Khách</option>
-                      <option value={6}>Gia đình (6+)</option>
+                      <option value={1} className="dark:bg-slate-900">1 Khách</option>
+                      <option value={2} className="dark:bg-slate-900">2 Khách</option>
+                      <option value={4} className="dark:bg-slate-900">4 Khách</option>
+                      <option value={6} className="dark:bg-slate-900">Gia đình (6+)</option>
                     </select>
                   </div>
                 </div>
@@ -248,35 +306,35 @@ export default function Home() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-teal-600 flex items-center gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
                   <Tag className="w-4 h-4" /> Ưu Đãi Độc Quyền
                 </span>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Mã Giảm Giá Đà Nẵng Hôm Nay</h2>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Mã Giảm Giá Đà Nẵng Hôm Nay</h2>
               </div>
-              <Link to="/hotels" className="text-xs font-bold text-teal-600 hover:text-teal-700 flex items-center gap-1">
+              <Link to="/hotels" className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:text-teal-700 flex items-center gap-1">
                 Xem tất cả phòng áp mã <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {vouchers.map((v) => (
-                <div key={v._id} className="relative p-5 rounded-3xl bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-white border border-teal-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                <div key={v._id} className="relative p-5 rounded-3xl bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-white dark:to-slate-800 border border-teal-200/80 dark:border-teal-800/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-1 rounded-lg bg-teal-600 text-white font-mono font-black text-xs tracking-wider">
+                      <span className="px-2.5 py-1 rounded-lg bg-teal-600 text-white font-mono font-black text-xs tracking-wider shadow-sm">
                         {v.code}
                       </span>
-                      <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
+                      <span className="text-xs font-black text-amber-600 dark:text-amber-400 flex items-center gap-1">
                         <Percent className="w-3.5 h-3.5" />
                         {v.discountType === 'percent' ? `Giảm ${v.discountValue}%` : `Giảm ${formatVND(v.discountValue)}`}
                       </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 leading-snug">{v.title}</h3>
-                    <p className="text-xs text-slate-600 line-clamp-2">{v.description}</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">{v.title}</h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">{v.description}</p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-teal-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <div className="mt-4 pt-3 border-t border-teal-100 dark:border-slate-700 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                     <span>Đơn từ {formatVND(v.minSpend)}</span>
-                    <span className="font-semibold text-teal-700">Đã dùng: {v.usedCount}/{v.totalUsageLimit}</span>
+                    <span className="font-semibold text-teal-700 dark:text-teal-400">Đã dùng: {v.usedCount}/{v.totalUsageLimit}</span>
                   </div>
                 </div>
               ))}
@@ -288,67 +346,104 @@ export default function Home() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-600 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
                 <Building2 className="w-4 h-4" /> Lưu Trú Hàng Đầu
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Khách Sạn & Homestay Nổi Bật Đà Nẵng</h2>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Khách Sạn & Homestay Nổi Bật Đà Nẵng</h2>
             </div>
-            <Link to="/hotels" className="text-xs sm:text-sm font-bold text-teal-600 hover:text-teal-700 flex items-center gap-1">
+            <Link to="/hotels" className="text-xs sm:text-sm font-bold text-teal-600 dark:text-teal-400 hover:text-teal-700 flex items-center gap-1">
               Xem tất cả ({featuredHotels.length}+) <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredHotels.map((h) => (
-              <div key={h._id} className="group bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
-                <div>
-                  <div className="relative h-48 overflow-hidden">
-                    <img 
-                      src={h.coverImage} 
-                      alt={h.name} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">
-                      <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                      {h.rating?.average || 4.8}
-                    </div>
-                    <div className="absolute top-3 right-3 bg-teal-600 text-white px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm">
-                      {h.type}
-                    </div>
-                  </div>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((n) => (
+                <GridCardSkeleton key={n} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredHotels.slice(0, 4).map((h) => {
+                const originalPrice = h.minPrice ? Math.round(h.minPrice * 1.18) : null;
+                return (
+                  <div key={h._id} className="group bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between">
+                    <div>
+                      <div className="relative h-48 overflow-hidden cursor-pointer"
+                        onClick={() => {
+                          const imgs = [h.coverImage, ...(h.images || [])].filter(Boolean);
+                          setLightboxImages(imgs);
+                          setLightboxIndex(0);
+                          setLightboxOpen(true);
+                        }}
+                      >
+                        <img 
+                          src={h.coverImage} 
+                          alt={h.name} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">
+                          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                          {h.rating?.average || 4.8}
+                        </div>
+                        <div className="absolute top-3 right-3 bg-teal-600 text-white px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm">
+                          {h.type}
+                        </div>
 
-                  <div className="p-5 space-y-2">
-                    <p className="text-xs text-slate-500 flex items-center gap-1 truncate font-medium">
-                      <MapPin className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                      {h.district}, Đà Nẵng
-                    </p>
-                    <h3 className="text-base font-black text-slate-900 group-hover:text-teal-600 transition-colors line-clamp-1">
-                      {h.name}
-                    </h3>
-                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                      {h.description}
-                    </p>
-                  </div>
-                </div>
+                        {/* FOMO badge */}
+                        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg bg-rose-600/90 backdrop-blur-sm text-white text-[9px] font-black uppercase flex items-center gap-1">
+                          <Flame className="w-3 h-3 text-amber-300" /> Chỉ còn 2 phòng
+                        </div>
+                      </div>
 
-                <div className="p-5 pt-0 border-t border-slate-100 flex items-center justify-between mt-3">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-semibold block">Giá chỉ từ</span>
-                    <span className="text-base font-black text-teal-600">
-                      {h.minPrice ? formatVND(h.minPrice) : 'Liên hệ'}
-                    </span>
-                    <span className="text-[10px] text-slate-400">/đêm</span>
+                      <div className="p-5 space-y-2">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 truncate font-medium">
+                          <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                          {h.district}, Đà Nẵng
+                        </p>
+                        <h3 className="text-base font-black text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-1">
+                          {h.name}
+                        </h3>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                          {h.description}
+                        </p>
+
+                        {/* Benefit pills */}
+                        <div className="pt-1 flex flex-wrap gap-1">
+                          <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+                            ✓ Miễn phí hủy
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
+                            ✓ Giữ phòng QR
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-5 pt-0 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between mt-3">
+                      <div>
+                        {originalPrice && (
+                          <span className="text-[11px] text-slate-400 line-through block">
+                            {formatVND(originalPrice)}
+                          </span>
+                        )}
+                        <span className="text-base font-black text-teal-600 dark:text-teal-400">
+                          {h.minPrice ? formatVND(h.minPrice) : 'Liên hệ'}
+                        </span>
+                        <span className="text-[10px] text-slate-400">/đêm</span>
+                      </div>
+                      <Link 
+                        to={`/hotels/${h._id}`}
+                        className="px-4 py-2 bg-slate-900 dark:bg-teal-600 dark:hover:bg-teal-700 group-hover:bg-teal-600 text-white text-xs font-bold rounded-xl transition-all shadow-md group-hover:shadow-teal-600/30 group-hover:scale-105"
+                      >
+                        Xem phòng
+                      </Link>
+                    </div>
                   </div>
-                  <Link 
-                    to={`/hotels/${h._id}`}
-                    className="px-4 py-2 bg-slate-900 group-hover:bg-teal-600 text-white text-xs font-bold rounded-xl transition-all shadow-md group-hover:shadow-teal-600/30 group-hover:scale-105"
-                  >
-                    Xem phòng
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Da Nang Travel Destinations */}
@@ -484,6 +579,15 @@ export default function Home() {
         </div>
 
       </div>
+
+      {/* Fullscreen Lightbox Modal */}
+      <ImageLightbox
+        images={lightboxImages}
+        currentIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        onNavigate={(idx) => setLightboxIndex(idx)}
+      />
     </div>
   );
 }

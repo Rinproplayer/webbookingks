@@ -15,10 +15,12 @@ import {
   Calendar,
   ArrowRight,
   Info,
-  Building2
+  Building2,
+  Camera
 } from 'lucide-react';
 import api from '../services/api';
 import DaNangMap from '../components/DaNangMap';
+import ImageLightbox from '../components/ImageLightbox';
 import { formatVND, formatDate } from '../utils/formatters';
 
 export default function HotelDetail() {
@@ -28,6 +30,10 @@ export default function HotelDetail() {
   const [hotel, setHotel] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Fullscreen Lightbox State
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Booking selection state
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -137,23 +143,55 @@ export default function HotelDetail() {
       </div>
 
       {/* Gallery Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[420px]">
-        <div className="lg:col-span-2 h-full rounded-3xl overflow-hidden shadow-sm">
-          <img src={hotel.coverImage} alt={hotel.name} className="w-full h-full object-cover" />
+      <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-4 h-[420px]">
+        <div 
+          className="lg:col-span-2 h-full rounded-3xl overflow-hidden shadow-sm cursor-pointer group relative"
+          onClick={() => {
+            setLightboxIndex(0);
+            setLightboxOpen(true);
+          }}
+        >
+          <img src={hotel.coverImage} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
         </div>
         <div className="hidden lg:grid grid-rows-2 gap-4 h-full">
           {hotel.images && hotel.images.length > 1 ? (
             hotel.images.slice(0, 2).map((img, idx) => (
-              <div key={idx} className="rounded-2xl overflow-hidden shadow-sm">
-                <img src={img} alt="gallery" className="w-full h-full object-cover" />
+              <div 
+                key={idx} 
+                className="rounded-2xl overflow-hidden shadow-sm cursor-pointer group relative"
+                onClick={() => {
+                  setLightboxIndex(idx + 1);
+                  setLightboxOpen(true);
+                }}
+              >
+                <img src={img} alt="gallery" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
               </div>
             ))
           ) : (
-            <div className="row-span-2 rounded-2xl overflow-hidden shadow-sm bg-slate-100">
-              <img src={hotel.coverImage} alt="gallery" className="w-full h-full object-cover" />
+            <div 
+              className="row-span-2 rounded-2xl overflow-hidden shadow-sm bg-slate-100 cursor-pointer group"
+              onClick={() => {
+                setLightboxIndex(0);
+                setLightboxOpen(true);
+              }}
+            >
+              <img src={hotel.coverImage} alt="gallery" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             </div>
           )}
         </div>
+
+        {/* View all photos button */}
+        <button
+          onClick={() => {
+            setLightboxIndex(0);
+            setLightboxOpen(true);
+          }}
+          className="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-800 dark:text-white px-4 py-2 rounded-2xl text-xs font-bold shadow-lg border border-slate-200/80 dark:border-slate-700 flex items-center gap-2 hover:scale-105 transition-all"
+        >
+          <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" /> Xem tất cả ảnh ({[hotel.coverImage, ...(hotel.images || [])].filter(Boolean).length})
+        </button>
       </div>
 
       {/* Stay Date Bar */}
@@ -453,6 +491,16 @@ export default function HotelDetail() {
 
       </div>
 
+      {/* Fullscreen Lightbox Modal */}
+      {hotel && (
+        <ImageLightbox
+          images={[hotel.coverImage, ...(hotel.images || [])].filter(Boolean)}
+          currentIndex={lightboxIndex}
+          isOpen={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onNavigate={(idx) => setLightboxIndex(idx)}
+        />
+      )}
     </div>
   );
 }
