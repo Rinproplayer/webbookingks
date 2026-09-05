@@ -6,6 +6,7 @@ const path = require('path');
 const connectDB = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
 const seedData = require('./seeds/seed');
+const syncNewData = require('./seeds/syncData');
 const User = require('./models/User');
 const { initReminderScheduler } = require('./utils/scheduler');
 
@@ -49,6 +50,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Auto-sync endpoint to update new hotels & destinations in MongoDB
+app.get('/api/sync-data', async (req, res) => {
+  const result = await syncNewData();
+  res.json({
+    status: 'sync_completed',
+    ...result
+  });
+});
+
 // Global Error Handler
 app.use(errorHandler);
 
@@ -56,12 +66,15 @@ const PORT = process.env.PORT || 5000;
 
 // Connect to Database and start server
 connectDB().then(async () => {
-  // Check if initial seed is needed (if no users found)
+  // Check if initial seed is needed or run smart auto-sync
   try {
     const userCount = await User.countDocuments();
     if (userCount === 0) {
       console.log('[Server] Database is empty. Running initial Da Nang data seed...');
       await seedData();
+    } else {
+      console.log('[Server] Database exists. Running smart auto-sync for any new destinations & hotels...');
+      await syncNewData();
     }
   } catch (seedErr) {
     console.warn('[Server] Seed check error:', seedErr.message);
