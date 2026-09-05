@@ -41,11 +41,32 @@ app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/banners', require('./routes/bannerRoutes'));
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  const mongoose = require('mongoose');
+  const Hotel = require('./models/Hotel');
+  const Destination = require('./models/Destination');
+  const Room = require('./models/Room');
+  
+  let stats = { hotels: 0, destinations: 0, rooms: 0 };
+  try {
+    stats.hotels = await Hotel.countDocuments({ isDeleted: false });
+    stats.destinations = await Destination.countDocuments({ isDeleted: false });
+    stats.rooms = await Room.countDocuments({ isDeleted: false });
+  } catch (e) {}
+
+  const host = mongoose.connection.host || 'unknown';
+  const isAtlas = host.includes('mongodb.net');
+
   res.json({
     status: 'online',
     project: 'Hostay - Hotel & Homestay Online Booking and Management System',
     location: 'Da Nang City, Vietnam',
+    database: {
+      type: isAtlas ? 'MongoDB Atlas (Cloud)' : 'MongoMemoryServer (Fallback)',
+      host: host,
+      readyState: mongoose.connection.readyState,
+      stats: stats
+    },
     timestamp: new Date().toISOString()
   });
 });

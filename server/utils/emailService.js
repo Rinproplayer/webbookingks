@@ -1,4 +1,4 @@
-﻿const nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer');
 const QRCode = require('qrcode');
 const { generateBookingPDF } = require('./pdfGenerator');
 const Booking = require('../models/Booking');
@@ -9,8 +9,8 @@ let transporterInstance = null;
 const getTransporter = async () => {
   if (transporterInstance) return transporterInstance;
 
-  const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
+  const emailUser = process.env.EMAIL_USER || 'nguyendangcap122005@gmail.com';
+  const emailPass = process.env.EMAIL_PASS || 'hghstcjzmhwggeiz';
 
   if (emailUser && emailPass) {
     if (process.env.EMAIL_HOST) {
