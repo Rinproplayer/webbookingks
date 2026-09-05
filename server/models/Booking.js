@@ -97,6 +97,20 @@ const bookingSchema = new mongoose.Schema({
   isReviewed: {
     type: Boolean,
     default: false
+  },
+  confirmationEmailSent: {
+    type: Boolean,
+    default: false
+  },
+  confirmationEmailSentAt: {
+    type: Date
+  },
+  reminderEmailSent: {
+    type: Boolean,
+    default: false
+  },
+  reminderEmailSentAt: {
+    type: Date
   }
 }, {
   timestamps: true

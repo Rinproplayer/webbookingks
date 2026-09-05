@@ -4,6 +4,8 @@ const Booking = require('../models/Booking');
 const Room = require('../models/Room');
 const Hotel = require('../models/Hotel');
 const Voucher = require('../models/Voucher');
+const { sendBookingConfirmation, sendCheckInReminder } = require('../utils/emailService');
+const { checkAndSendCheckInReminders } = require('../utils/scheduler');
 
 // Helper to generate unique booking code HT-2026-XXXX
 const generateBookingCode = () => {
@@ -123,7 +125,7 @@ const createBooking = async (req, res, next) => {
       qrCodeDataUrl
     });
 
-    // If mock payment, immediately decrement available rooms
+    // If mock payment, immediately decrement available rooms and auto-send confirmation email
     if (paymentMethod === 'mock') {
       room.availableRooms = Math.max(0, room.availableRooms - roomQuantity);
       await room.save();
@@ -132,6 +134,9 @@ const createBooking = async (req, res, next) => {
         voucherDoc.usedCount += 1;
         await voucherDoc.save();
       }
+
+      // Auto-send confirmation email & PDF ticket in background
+      sendBookingConfirmation(booking).catch(e => console.error('[EmailService] Auto-send error:', e.message));
     }
 
     res.status(201).json({
@@ -267,10 +272,94 @@ const cancelBooking = async (req, res, next) => {
   }
 };
 
+// @desc Resend booking confirmation email & PDF ticket
+// @route POST /api/bookings/:idOrCode/resend-email
+const resendConfirmationEmail = async (req, res, next) => {
+  try {
+    const { idOrCode } = req.params;
+    let booking;
+    if (idOrCode.match(/^[0-9a-fA-F]{24}$/)) {
+      booking = await Booking.findById(idOrCode);
+    } else {
+      booking = await Booking.findOne({ bookingCode: idOrCode.toUpperCase() });
+    }
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đơn đặt phòng' });
+    }
+
+    // Authorization check: owner or hotelier/admin
+    const isOwner = req.user && (booking.customer.toString() === req.user.id);
+    const isStaff = req.user && (req.user.role === 'admin' || req.user.role === 'hotelier');
+    if (!isOwner && !isStaff) {
+      return res.status(403).json({ success: false, message: 'Bạn không có quyền gửi lại vé cho đơn này' });
+    }
+
+    const result = await sendBookingConfirmation(booking);
+    if (!result.success) {
+      return res.status(500).json({ success: false, message: result.message || result.error || 'Gửi email thất bại' });
+    }
+
+    res.json({
+      success: true,
+      message: `Đã gửi vé điện tử đến hòm thư ${booking.guestInfo?.email || 'của bạn'}!`,
+      previewUrl: result.previewUrl || null
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Test trigger check-in reminder email
+// @route POST /api/bookings/:idOrCode/test-reminder
+const testCheckInReminder = async (req, res, next) => {
+  try {
+    const { idOrCode } = req.params;
+    let booking;
+    if (idOrCode.match(/^[0-9a-fA-F]{24}$/)) {
+      booking = await Booking.findById(idOrCode);
+    } else {
+      booking = await Booking.findOne({ bookingCode: idOrCode.toUpperCase() });
+    }
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đơn đặt phòng' });
+    }
+
+    const result = await sendCheckInReminder(booking);
+    res.json({
+      success: result.success,
+      message: result.success ? `Đã gửi email nhắc lịch nhận phòng đến ${booking.guestInfo?.email}!` : 'Gửi email thất bại',
+      previewUrl: result.previewUrl || null
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Trigger scan & send all upcoming check-in reminders
+// @route POST /api/bookings/trigger-reminders
+const triggerAllReminders = async (req, res, next) => {
+  try {
+    const result = await checkAndSendCheckInReminders();
+    res.json({
+      success: true,
+      message: `Đã quét đơn và gửi nhắc lịch: ${result.sent}/${result.processed} đơn`,
+      result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   getMyBookings,
   getHotelierBookings,
   getBookingDetail,
-  cancelBooking
+  cancelBooking,
+  resendConfirmationEmail,
+  testCheckInReminder,
+  triggerAllReminders
 };
+

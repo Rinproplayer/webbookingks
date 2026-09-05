@@ -7,6 +7,7 @@ const connectDB = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
 const seedData = require('./seeds/seed');
 const User = require('./models/User');
+const { initReminderScheduler } = require('./utils/scheduler');
 
 dotenv.config();
 
@@ -71,5 +72,8 @@ connectDB().then(async () => {
     console.log(`🚀 Hostay Server is running on http://localhost:${PORT}`);
     console.log(`📍 Specialized for Da Nang Hotel & Homestay Booking`);
     console.log(`====================================================`);
+
+    // Initialize daily check-in email reminder scheduler
+    initReminderScheduler();
   });
 });

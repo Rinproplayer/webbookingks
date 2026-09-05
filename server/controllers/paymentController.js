@@ -4,6 +4,7 @@ const Room = require('../models/Room');
 const Voucher = require('../models/Voucher');
 const { createVNPayPaymentUrl, verifyVNPayReturn } = require('../utils/vnpay');
 const { createMoMoPaymentUrl, verifyMoMoReturn } = require('../utils/momo');
+const { sendBookingConfirmation } = require('../utils/emailService');
 
 // @desc Create VNPay checkout URL
 // @route POST /api/payments/create-vnpay-url
@@ -61,6 +62,9 @@ const processVNPayReturn = async (req, res, next) => {
         orderInfo: `VNPay ${booking.bookingCode}`,
         rawResponse: req.body
       });
+
+      // Auto-send confirmation email and PDF ticket
+      sendBookingConfirmation(booking).catch(e => console.error('[EmailService] VNPay email auto-send error:', e.message));
 
       return res.json({ success: true, message: 'Thanh toán VNPay thành công', bookingCode: booking.bookingCode });
     } else {
@@ -121,6 +125,9 @@ const processMoMoReturn = async (req, res, next) => {
         rawResponse: req.body
       });
 
+      // Auto-send confirmation email and PDF ticket
+      sendBookingConfirmation(booking).catch(e => console.error('[EmailService] MoMo email auto-send error:', e.message));
+
       return res.json({ success: true, message: 'Thanh toán MoMo thành công', bookingCode: booking.bookingCode });
     } else {
       booking.paymentStatus = 'failed';
@@ -163,6 +170,9 @@ const mockCheckout = async (req, res, next) => {
       status: 'success',
       orderInfo: `Simulated Sandbox Payment ${booking.bookingCode}`
     });
+
+    // Auto-send confirmation email and PDF ticket
+    sendBookingConfirmation(booking).catch(e => console.error('[EmailService] Mock checkout email auto-send error:', e.message));
 
     res.json({
       success: true,

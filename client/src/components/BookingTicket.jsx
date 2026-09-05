@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatVND, formatDate, getStatusBadge } from '../utils/formatters';
-import { Building2, Calendar, MapPin, Phone, User, Printer, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Building2, Calendar, MapPin, Phone, User, Printer, ShieldCheck, CheckCircle2, Mail, Send, Loader2, Check } from 'lucide-react';
+import api from '../services/api';
 
 export default function BookingTicket({ booking }) {
   if (!booking) return null;
+
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState(null); // { type: 'success'|'error', message: string }
 
   const statusInfo = getStatusBadge(booking.status);
 
@@ -23,18 +27,85 @@ export default function BookingTicket({ booking }) {
     window.print();
   };
 
+  const handleResendEmail = async () => {
+    setSendingEmail(true);
+    setEmailStatus(null);
+    try {
+      const res = await api.post(`/bookings/${booking.bookingCode}/resend-email`);
+      if (res.data.success) {
+        setEmailStatus({
+          type: 'success',
+          message: res.data.message || 'Đã gửi lại vé điện tử PDF vào hộp thư của bạn!'
+        });
+      }
+    } catch (err) {
+      setEmailStatus({
+        type: 'error',
+        message: err.response?.data?.message || 'Không thể gửi email lúc này. Vui lòng thử lại sau.'
+      });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const recipientEmail = booking.guestInfo?.email || booking.customer?.email;
+
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto space-y-4">
+      {/* Email Notification Banner */}
+      {recipientEmail && (
+        <div className="no-print bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 rounded-2xl p-4 flex items-start gap-3.5">
+          <div className="p-2.5 rounded-xl bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 shrink-0 mt-0.5">
+            <Mail className="w-5 h-5" />
+          </div>
+          <div className="flex-1 text-xs space-y-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-bold text-teal-950 dark:text-teal-100">
+                Vé điện tử PDF & Mã QR đã được gửi đến:
+              </span>
+              <span className="font-mono font-semibold px-2 py-0.5 bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-300 rounded-md">
+                {recipientEmail}
+              </span>
+            </div>
+            <p className="text-teal-800/80 dark:text-teal-300/80 leading-relaxed">
+              Hệ thống đã tự động gửi phiếu xác nhận kèm file PDF vé điện tử có mã QR để bạn làm thủ tục nhận phòng nhanh tại quầy lễ tân.
+            </p>
+            {emailStatus && (
+              <div className={`mt-2 p-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${
+                emailStatus.type === 'success' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+              }`}>
+                {emailStatus.type === 'success' ? <Check className="w-4 h-4" /> : null}
+                {emailStatus.message}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Action Bar */}
-      <div className="no-print flex items-center justify-between mb-4">
+      <div className="no-print flex items-center justify-between gap-3">
         <span className="text-xs font-semibold text-slate-500">Vé điện tử xác nhận đặt phòng</span>
-        <button
-          onClick={handlePrint}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 shadow-sm"
-        >
-          <Printer className="w-3.5 h-3.5" />
-          In vé / Lưu PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleResendEmail}
+            disabled={sendingEmail}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
+          >
+            {sendingEmail ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
+            {sendingEmail ? 'Đang gửi...' : 'Gửi lại Email'}
+          </button>
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            In vé / Lưu PDF
+          </button>
+        </div>
       </div>
 
       {/* Ticket Container */}

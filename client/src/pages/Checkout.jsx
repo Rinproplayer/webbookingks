@@ -376,6 +376,10 @@ export default function Checkout() {
               {submitting ? 'Đang khởi tạo đơn...' : `Thanh toán ${formatVND(finalTotal)} & Nhận Vé QR`}
             </button>
 
+            <div className="flex items-center justify-center gap-2 text-slate-500 text-[11px]">
+              <span>📧 Tự động gửi Vé điện tử PDF & Mã QR đến hòm thư <b>{guestEmail || 'của bạn'}</b></span>
+            </div>
+
           </form>
         </div>
 
@@ -432,11 +436,13 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="p-3 bg-teal-50/60 rounded-xl border border-teal-100 text-[11px] text-teal-900 space-y-1">
-              <p className="font-bold flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-teal-600" /> Xuất Vé QR Không Chạm
+            <div className="p-3.5 bg-teal-50/70 dark:bg-teal-950/40 rounded-2xl border border-teal-100 dark:border-teal-900/60 text-[11px] text-teal-900 dark:text-teal-200 space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-teal-600" /> Vé Điện Tử & Email Xác Nhận Tự Động
               </p>
-              <p className="text-teal-700">Mã QR điện tử sẽ được cấp ngay sau khi giao dịch hoàn tất.</p>
+              <p className="text-teal-700 dark:text-teal-400">
+                Phiếu xác nhận, hóa đơn và file PDF vé điện tử (kèm mã QR Check-in) sẽ được tự động gửi đến Gmail của bạn ngay khi hoàn tất.
+              </p>
             </div>
           </div>
         </div>
