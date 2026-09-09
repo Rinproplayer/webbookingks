@@ -40,6 +40,7 @@ export default function Home() {
 
   // Sticky Search Bar State
   const [isSticky, setIsSticky] = useState(false);
+  const [navbarHeight, setNavbarHeight] = useState(80);
 
   // Fullscreen Lightbox State
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -59,6 +60,19 @@ export default function Home() {
     return d.toISOString().split('T')[0];
   });
   const [guests, setGuests] = useState(2);
+
+  // Dynamic Navbar Height detection to prevent any gap on scroll
+  useEffect(() => {
+    const updateNavHeight = () => {
+      const header = document.querySelector('header');
+      if (header) {
+        setNavbarHeight(header.offsetHeight || 80);
+      }
+    };
+    updateNavHeight();
+    window.addEventListener('resize', updateNavHeight);
+    return () => window.removeEventListener('resize', updateNavHeight);
+  }, []);
 
   // Handle Scroll for Sticky Search Bar
   useEffect(() => {
@@ -136,6 +150,37 @@ export default function Home() {
   return (
     <div className="space-y-20 pb-20">
       
+      {/* Sticky Search Bar on Scroll */}
+      {isSticky && (
+        <div 
+          style={{ top: `${navbarHeight}px` }}
+          className="fixed left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xl py-2.5 px-4 transition-all duration-150 animate-in slide-in-from-top-1"
+        >
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto flex-1 text-xs">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-800 dark:text-slate-200 shrink-0">
+                <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span>{searchDistrict === 'all' ? 'Toàn bộ Đà Nẵng' : searchDistrict}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-800 dark:text-slate-200 shrink-0">
+                <Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span>{checkInDate} → {checkOutDate}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-800 dark:text-slate-200 shrink-0">
+                <Users className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span>{guests} Khách</span>
+              </div>
+            </div>
+            <button
+              onClick={handleSearchSubmit}
+              className="px-5 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-black text-xs rounded-xl shadow-md hover:scale-105 transition-all shrink-0 flex items-center gap-1.5 cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5" /> Tìm phòng
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <div className="relative min-h-[620px] flex items-center justify-center bg-slate-900 overflow-hidden">
         {/* Background image overlay with smooth transition */}
@@ -182,34 +227,6 @@ export default function Home() {
                   aria-label={`Slide ${idx + 1}`}
                 />
               ))}
-            </div>
-          )}
-
-          {/* Sticky Search Bar on Scroll */}
-          {isSticky && (
-            <div className="fixed top-20 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 shadow-xl py-3 px-4 animate-in slide-in-from-top-4 duration-300">
-              <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 overflow-x-auto flex-1 text-xs">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-800 dark:text-slate-200 shrink-0">
-                    <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                    <span>{searchDistrict === 'all' ? 'Toàn bộ Đà Nẵng' : searchDistrict}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-800 dark:text-slate-200 shrink-0">
-                    <Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                    <span>{checkInDate} → {checkOutDate}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-800 dark:text-slate-200 shrink-0">
-                    <Users className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                    <span>{guests} Khách</span>
-                  </div>
-                </div>
-                <button
-                  onClick={handleSearchSubmit}
-                  className="px-5 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-black text-xs rounded-xl shadow-md hover:scale-105 transition-all shrink-0 flex items-center gap-1.5"
-                >
-                  <Search className="w-3.5 h-3.5" /> Tìm phòng
-                </button>
-              </div>
             </div>
           )}
 
