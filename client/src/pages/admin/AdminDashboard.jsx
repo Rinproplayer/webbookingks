@@ -178,6 +178,26 @@ export default function AdminDashboard() {
     totalUsageLimit: 200
   });
 
+  // Multi-select Bulk Delete States
+  const [selectedDestIds, setSelectedDestIds] = useState([]);
+  const [selectedHotelIds, setSelectedHotelIds] = useState([]);
+  const [selectedBannerIds, setSelectedBannerIds] = useState([]);
+  const [selectedVoucherIds, setSelectedVoucherIds] = useState([]);
+  const [selectedRoomIds, setSelectedRoomIds] = useState([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // Helper toggle selection
+  const toggleSelect = (id, list, setList) => {
+    setList(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+  const toggleSelectAll = (allIds, list, setList) => {
+    if (list.length === allIds.length && allIds.length > 0) {
+      setList([]);
+    } else {
+      setList([...allIds]);
+    }
+  };
+
   // Fetch initial data
   const fetchStats = async () => {
     setLoadingStats(true);
@@ -419,10 +439,29 @@ export default function AdminDashboard() {
       const res = await api.delete(`/banners/${bannerId}`);
       if (res.data.success) {
         alert('Đã xóa banner thành công!');
+        setSelectedBannerIds(prev => prev.filter(id => id !== bannerId));
         fetchBanners();
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa banner');
+    }
+  };
+
+  const handleBulkDeleteBanners = async () => {
+    if (selectedBannerIds.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedBannerIds.length} banner đã chọn không?`)) return;
+    setBulkDeleting(true);
+    try {
+      const res = await api.post('/banners/bulk-delete', { ids: selectedBannerIds });
+      if (res.data.success) {
+        alert(res.data.message);
+        setSelectedBannerIds([]);
+        fetchBanners();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt banner');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -552,10 +591,29 @@ export default function AdminDashboard() {
       const res = await api.delete(`/hotels/${hotelId}`);
       if (res.data.success) {
         alert('Đã xóa cơ sở lưu trú thành công!');
+        setSelectedHotelIds(prev => prev.filter(id => id !== hotelId));
         fetchHotels();
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa khách sạn');
+    }
+  };
+
+  const handleBulkDeleteHotels = async () => {
+    if (selectedHotelIds.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedHotelIds.length} cơ sở lưu trú đã chọn không? Các phòng liên quan sẽ bị ẩn.`)) return;
+    setBulkDeleting(true);
+    try {
+      const res = await api.post('/hotels/bulk-delete', { ids: selectedHotelIds });
+      if (res.data.success) {
+        alert(res.data.message);
+        setSelectedHotelIds([]);
+        fetchHotels();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt khách sạn');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -646,10 +704,37 @@ export default function AdminDashboard() {
       const res = await api.delete(`/rooms/${roomId}`);
       if (res.data.success) {
         alert('Đã xóa hạng phòng thành công!');
+        setSelectedRoomIds(prev => prev.filter(id => id !== roomId));
         fetchHotels();
+        if (selectedHotelForRooms) {
+          const updated = await api.get(`/hotels/${selectedHotelForRooms._id}`);
+          if (updated.data.success) setSelectedHotelForRooms(updated.data.hotel);
+        }
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa phòng');
+    }
+  };
+
+  const handleBulkDeleteRooms = async () => {
+    if (selectedRoomIds.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedRoomIds.length} hạng phòng đã chọn không?`)) return;
+    setBulkDeleting(true);
+    try {
+      const res = await api.post('/rooms/bulk-delete', { ids: selectedRoomIds });
+      if (res.data.success) {
+        alert(res.data.message);
+        setSelectedRoomIds([]);
+        fetchHotels();
+        if (selectedHotelForRooms) {
+          const updated = await api.get(`/hotels/${selectedHotelForRooms._id}`);
+          if (updated.data.success) setSelectedHotelForRooms(updated.data.hotel);
+        }
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt phòng');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -716,10 +801,61 @@ export default function AdminDashboard() {
       const res = await api.delete(`/destinations/${destId}`);
       if (res.data.success) {
         alert('Đã xóa điểm đến du lịch!');
+        setSelectedDestIds(prev => prev.filter(id => id !== destId));
         fetchDestinations();
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa điểm đến');
+    }
+  };
+
+  const handleBulkDeleteDest = async () => {
+    if (selectedDestIds.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedDestIds.length} điểm đến du lịch đã chọn không?`)) return;
+    setBulkDeleting(true);
+    try {
+      const res = await api.post('/destinations/bulk-delete', { ids: selectedDestIds });
+      if (res.data.success) {
+        alert(res.data.message);
+        setSelectedDestIds([]);
+        fetchDestinations();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt điểm đến');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const handleDeleteVoucher = async (voucherId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa mã voucher này?')) return;
+    try {
+      const res = await api.delete(`/vouchers/${voucherId}`);
+      if (res.data.success) {
+        alert('Đã xóa mã voucher thành công!');
+        setSelectedVoucherIds(prev => prev.filter(id => id !== voucherId));
+        fetchVouchers();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa voucher');
+    }
+  };
+
+  const handleBulkDeleteVouchers = async () => {
+    if (selectedVoucherIds.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedVoucherIds.length} mã voucher đã chọn không?`)) return;
+    setBulkDeleting(true);
+    try {
+      const res = await api.post('/vouchers/bulk-delete', { ids: selectedVoucherIds });
+      if (res.data.success) {
+        alert(res.data.message);
+        setSelectedVoucherIds([]);
+        fetchVouchers();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt voucher');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -975,48 +1111,82 @@ export default function AdminDashboard() {
               Chưa có banner nào. Bấm <strong>"Thêm Banner Mới"</strong> để tạo banner đầu tiên.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {banners.map((b) => (
-                <div key={b._id} className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div>
-                    {/* Banner Realistic Live Preview */}
-                    <div className="relative h-56 w-full bg-slate-900 overflow-hidden flex items-center justify-center p-6 text-center">
-                      <div
-                        className="absolute inset-0 bg-cover bg-center opacity-40"
-                        style={{ backgroundImage: `url('${b.imageUrl}')` }}
-                      ></div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/50 to-transparent"></div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-slate-600 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <label className="flex items-center gap-2 cursor-pointer font-bold select-none">
+                  <input 
+                    type="checkbox"
+                    checked={banners.length > 0 && selectedBannerIds.length === banners.length}
+                    onChange={() => toggleSelectAll(banners.map(b => b._id), selectedBannerIds, setSelectedBannerIds)}
+                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                  />
+                  <span>Chọn tất cả ({banners.length} banner)</span>
+                </label>
+                {selectedBannerIds.length > 0 && (
+                  <button
+                    onClick={() => setSelectedBannerIds([])}
+                    className="text-slate-400 hover:text-slate-700 underline text-xs"
+                  >
+                    Bỏ chọn ({selectedBannerIds.length})
+                  </button>
+                )}
+              </div>
 
-                      <div className="relative z-10 space-y-2 max-w-sm mx-auto">
-                        {b.badge && (
-                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-teal-500/20 border border-teal-400/40 text-teal-300 text-[10px] font-bold">
-                            {b.badge}
-                          </span>
-                        )}
-                        <h4 className="text-base sm:text-lg font-black text-white leading-snug">
-                          {b.title} <br />
-                          {b.highlightText && (
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-300 to-amber-300">
-                              {b.highlightText}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {banners.map((b) => (
+                  <div key={b._id} className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div>
+                      {/* Banner Realistic Live Preview */}
+                      <div className="relative h-56 w-full bg-slate-900 overflow-hidden flex items-center justify-center p-6 text-center">
+                        <div
+                          className="absolute inset-0 bg-cover bg-center opacity-40"
+                          style={{ backgroundImage: `url('${b.imageUrl}')` }}
+                        ></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/50 to-transparent"></div>
+
+                        {/* Selection Checkbox */}
+                        <div 
+                          onClick={(e) => { e.stopPropagation(); toggleSelect(b._id, selectedBannerIds, setSelectedBannerIds); }}
+                          className={`absolute top-3 left-3 w-7 h-7 rounded-xl flex items-center justify-center cursor-pointer transition-all z-20 shadow-md ${
+                            selectedBannerIds.includes(b._id) 
+                              ? 'bg-purple-600 text-white ring-2 ring-white scale-110' 
+                              : 'bg-black/50 hover:bg-black/70 text-white border border-white/40'
+                          }`}
+                          title={selectedBannerIds.includes(b._id) ? "Bỏ chọn" : "Chọn để xóa"}
+                        >
+                          {selectedBannerIds.includes(b._id) && <Check className="w-4 h-4 stroke-[3]" />}
+                        </div>
+
+                        <div className="relative z-10 space-y-2 max-w-sm mx-auto">
+                          {b.badge && (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full bg-teal-500/20 border border-teal-400/40 text-teal-300 text-[10px] font-bold">
+                              {b.badge}
                             </span>
                           )}
-                        </h4>
-                        {b.subtitle && (
-                          <p className="text-[11px] text-slate-300 line-clamp-2">{b.subtitle}</p>
-                        )}
-                      </div>
+                          <h4 className="text-base sm:text-lg font-black text-white leading-snug">
+                            {b.title} <br />
+                            {b.highlightText && (
+                              <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-cyan-300 to-amber-300">
+                                {b.highlightText}
+                              </span>
+                            )}
+                          </h4>
+                          {b.subtitle && (
+                            <p className="text-[11px] text-slate-300 line-clamp-2">{b.subtitle}</p>
+                          )}
+                        </div>
 
-                      {/* Position & Status tags */}
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase shadow-sm ${
-                          b.position === 'hero' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'
-                        }`}>
-                          {b.position === 'hero' ? 'Hero Slider' : 'Promo Banner'}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-black/60 text-slate-200 text-[10px] font-mono">
-                          Thứ tự: {b.order}
-                        </span>
-                      </div>
+                        {/* Position & Status tags */}
+                        <div className="absolute top-3 left-12 flex items-center gap-1.5">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase shadow-sm ${
+                            b.position === 'hero' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'
+                          }`}>
+                            {b.position === 'hero' ? 'Hero Slider' : 'Promo Banner'}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-black/60 text-slate-200 text-[10px] font-mono">
+                            Thứ tự: {b.order}
+                          </span>
+                        </div>
 
                       <div className="absolute top-3 right-3">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm ${
@@ -1067,6 +1237,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ))}
+              </div>
             </div>
           )}
         </div>
@@ -1133,25 +1304,60 @@ export default function AdminDashboard() {
               Không tìm thấy cơ sở lưu trú phù hợp với bộ lọc.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredHotels.map(hotel => (
-                <div key={hotel._id} className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div>
-                    <div className="relative h-44 w-full bg-slate-100 overflow-hidden">
-                      <img
-                        src={hotel.coverImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'}
-                        alt={hotel.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'; }}
-                      />
-                      <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
-                        <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold uppercase">
-                          {hotel.type}
-                        </span>
-                        <span className="px-2.5 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center gap-1 shadow-sm">
-                          <Star className="w-3 h-3 fill-white" /> {hotel.starRating || 3} sao
-                        </span>
-                      </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-slate-600 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <label className="flex items-center gap-2 cursor-pointer font-bold select-none">
+                  <input 
+                    type="checkbox"
+                    checked={filteredHotels.length > 0 && selectedHotelIds.length === filteredHotels.length}
+                    onChange={() => toggleSelectAll(filteredHotels.map(h => h._id), selectedHotelIds, setSelectedHotelIds)}
+                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                  />
+                  <span>Chọn tất cả ({filteredHotels.length} cơ sở)</span>
+                </label>
+                {selectedHotelIds.length > 0 && (
+                  <button
+                    onClick={() => setSelectedHotelIds([])}
+                    className="text-slate-400 hover:text-slate-700 underline text-xs"
+                  >
+                    Bỏ chọn ({selectedHotelIds.length})
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredHotels.map(hotel => (
+                  <div key={hotel._id} className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div>
+                      <div className="relative h-44 w-full bg-slate-100 overflow-hidden">
+                        <img
+                          src={hotel.coverImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'}
+                          alt={hotel.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'; }}
+                        />
+
+                        {/* Selection Checkbox */}
+                        <div 
+                          onClick={(e) => { e.stopPropagation(); toggleSelect(hotel._id, selectedHotelIds, setSelectedHotelIds); }}
+                          className={`absolute top-3 left-3 w-7 h-7 rounded-xl flex items-center justify-center cursor-pointer transition-all z-20 shadow-md ${
+                            selectedHotelIds.includes(hotel._id) 
+                              ? 'bg-purple-600 text-white ring-2 ring-white scale-110' 
+                              : 'bg-black/50 hover:bg-black/70 text-white border border-white/40'
+                          }`}
+                          title={selectedHotelIds.includes(hotel._id) ? "Bỏ chọn" : "Chọn để xóa"}
+                        >
+                          {selectedHotelIds.includes(hotel._id) && <Check className="w-4 h-4 stroke-[3]" />}
+                        </div>
+
+                        <div className="absolute top-3 left-12 flex gap-1.5 flex-wrap">
+                          <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold uppercase">
+                            {hotel.type}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center gap-1 shadow-sm">
+                            <Star className="w-3 h-3 fill-white" /> {hotel.starRating || 3} sao
+                          </span>
+                        </div>
                       <div className="absolute top-3 right-3">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm ${
                           hotel.isOpen ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
@@ -1221,9 +1427,10 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
+    )}
 
       {/* ========================================================
           TAB 4: DESTINATIONS MANAGEMENT
@@ -1275,60 +1482,96 @@ export default function AdminDashboard() {
               Không tìm thấy điểm đến nào phù hợp.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredDestinations.map(dest => (
-                <div key={dest._id} className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div>
-                    <div className="relative h-44 w-full bg-slate-100 overflow-hidden">
-                      <img
-                        src={dest.coverImage || 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800'}
-                        alt={dest.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800'; }}
-                      />
-                      <div className="absolute top-3 left-3">
-                        <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold uppercase">
-                          {dest.category}
-                        </span>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-slate-600 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <label className="flex items-center gap-2 cursor-pointer font-bold select-none">
+                  <input 
+                    type="checkbox"
+                    checked={filteredDestinations.length > 0 && selectedDestIds.length === filteredDestinations.length}
+                    onChange={() => toggleSelectAll(filteredDestinations.map(d => d._id), selectedDestIds, setSelectedDestIds)}
+                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                  />
+                  <span>Chọn tất cả ({filteredDestinations.length} điểm đến)</span>
+                </label>
+                {selectedDestIds.length > 0 && (
+                  <button
+                    onClick={() => setSelectedDestIds([])}
+                    className="text-slate-400 hover:text-slate-700 underline text-xs"
+                  >
+                    Bỏ chọn ({selectedDestIds.length})
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredDestinations.map(dest => (
+                  <div key={dest._id} className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+                    <div>
+                      <div className="relative h-44 w-full bg-slate-100 overflow-hidden">
+                        <img
+                          src={dest.coverImage || 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800'}
+                          alt={dest.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800'; }}
+                        />
+
+                        {/* Selection Checkbox */}
+                        <div 
+                          onClick={(e) => { e.stopPropagation(); toggleSelect(dest._id, selectedDestIds, setSelectedDestIds); }}
+                          className={`absolute top-3 left-3 w-7 h-7 rounded-xl flex items-center justify-center cursor-pointer transition-all z-20 shadow-md ${
+                            selectedDestIds.includes(dest._id) 
+                              ? 'bg-purple-600 text-white ring-2 ring-white scale-110' 
+                              : 'bg-black/50 hover:bg-black/70 text-white border border-white/40'
+                          }`}
+                          title={selectedDestIds.includes(dest._id) ? "Bỏ chọn" : "Chọn để xóa"}
+                        >
+                          {selectedDestIds.includes(dest._id) && <Check className="w-4 h-4 stroke-[3]" />}
+                        </div>
+
+                        <div className="absolute top-3 left-12">
+                          <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold uppercase">
+                            {dest.category}
+                          </span>
+                        </div>
+                        <div className="absolute top-3 right-3">
+                          <span className="px-2.5 py-1 rounded-full bg-purple-700 text-white text-[10px] font-bold shadow-sm">
+                            {dest.district}
+                          </span>
+                        </div>
                       </div>
-                      <div className="absolute top-3 right-3">
-                        <span className="px-2.5 py-1 rounded-full bg-purple-700 text-white text-[10px] font-bold shadow-sm">
-                          {dest.district}
-                        </span>
+
+                      <div className="p-5 space-y-2">
+                        <h4 className="font-black text-slate-900 text-base line-clamp-1">{dest.name}</h4>
+                        <p className="text-xs text-slate-500 flex items-center gap-1.5 line-clamp-1">
+                          <MapPin className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                          {dest.address}
+                        </p>
+                        <p className="text-xs text-slate-400 line-clamp-2">{dest.description}</p>
+                        
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                          <span>Vé: <strong className="text-emerald-600">{dest.ticketPrice || 'Miễn phí'}</strong></span>
+                          <span>Giờ: {dest.openingHours || '07:00 - 21:00'}</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="p-5 space-y-2">
-                      <h4 className="font-black text-slate-900 text-base line-clamp-1">{dest.name}</h4>
-                      <p className="text-xs text-slate-500 flex items-center gap-1.5 line-clamp-1">
-                        <MapPin className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                        {dest.address}
-                      </p>
-                      <p className="text-xs text-slate-400 line-clamp-2">{dest.description}</p>
-                      
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                        <span>Vé: <strong className="text-emerald-600">{dest.ticketPrice || 'Miễn phí'}</strong></span>
-                        <span>Giờ: {dest.openingHours || '07:00 - 21:00'}</span>
-                      </div>
+                    <div className="p-4 bg-slate-50/70 border-t border-slate-100 flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleOpenEditDest(dest)}
+                        className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-xl flex items-center gap-1"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" /> Sửa thông tin
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDest(dest._id)}
+                        className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-xl"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="p-4 bg-slate-50/70 border-t border-slate-100 flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => handleOpenEditDest(dest)}
-                      className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-xl flex items-center gap-1"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" /> Sửa thông tin
-                    </button>
-                    <button
-                      onClick={() => handleDeleteDest(dest._id)}
-                      className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-xl"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -1393,39 +1636,84 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {vouchers.map((v) => (
-              <div key={v._id} className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono font-black text-xs text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200">
-                    {v.code}
-                  </span>
+          {vouchers.length === 0 ? (
+            <div className="bg-white p-8 rounded-3xl border text-center text-xs text-slate-400">
+              Chưa có mã giảm giá nào được tạo.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-slate-600 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <label className="flex items-center gap-2 cursor-pointer font-bold select-none">
+                  <input 
+                    type="checkbox"
+                    checked={vouchers.length > 0 && selectedVoucherIds.length === vouchers.length}
+                    onChange={() => toggleSelectAll(vouchers.map(v => v._id), selectedVoucherIds, setSelectedVoucherIds)}
+                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                  />
+                  <span>Chọn tất cả ({vouchers.length} voucher)</span>
+                </label>
+                {selectedVoucherIds.length > 0 && (
                   <button
-                    onClick={() => handleToggleVoucher(v._id)}
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      v.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
-                    }`}
+                    onClick={() => setSelectedVoucherIds([])}
+                    className="text-slate-400 hover:text-slate-700 underline text-xs"
                   >
-                    {v.isActive ? 'Đang chạy' : 'Tạm dừng'}
+                    Bỏ chọn ({selectedVoucherIds.length})
                   </button>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-xs text-slate-900">{v.title}</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    {v.discountType === 'percent' ? `Giảm ${v.discountValue}%` : `Giảm ${formatVND(v.discountValue)}`}
-                    {v.maxDiscount > 0 ? ` (Tối đa ${formatVND(v.maxDiscount)})` : ''}
-                  </p>
-                </div>
-
-                <div className="text-[10px] text-slate-400 space-y-0.5 pt-2 border-t border-slate-100">
-                  <p>Đơn tối thiểu: {formatVND(v.minSpend)}</p>
-                  <p>Lượt đã dùng: {v.usedCount} / {v.totalUsageLimit}</p>
-                  <p>Hạn dùng: {formatDate(v.endDate)}</p>
-                </div>
+                )}
               </div>
-            ))}
-          </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {vouchers.map((v) => (
+                  <div key={v._id} className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-3 relative hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedVoucherIds.includes(v._id)}
+                          onChange={() => toggleSelect(v._id, selectedVoucherIds, setSelectedVoucherIds)}
+                          className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                        />
+                        <span className="font-mono font-black text-xs text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200">
+                          {v.code}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleToggleVoucher(v._id)}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            v.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
+                          }`}
+                        >
+                          {v.isActive ? 'Đang chạy' : 'Tạm dừng'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVoucher(v._id)}
+                          title="Xóa voucher"
+                          className="p-1 hover:bg-red-50 text-red-500 hover:text-red-700 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">{v.title}</h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {v.discountType === 'percent' ? `Giảm ${v.discountValue}%` : `Giảm ${formatVND(v.discountValue)}`}
+                        {v.maxDiscount > 0 ? ` (Tối đa ${formatVND(v.maxDiscount)})` : ''}
+                      </p>
+                    </div>
+
+                    <div className="text-[10px] text-slate-400 space-y-0.5 pt-2 border-t border-slate-100">
+                      <p>Đơn tối thiểu: {formatVND(v.minSpend)}</p>
+                      <p>Lượt đã dùng: {v.usedCount} / {v.totalUsageLimit}</p>
+                      <p>Hạn dùng: {formatDate(v.endDate)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -2171,63 +2459,104 @@ export default function AdminDashboard() {
                 Chưa có hạng phòng nào cho cơ sở này. Bấm <strong>"Thêm Hạng Phòng Mới"</strong> để bắt đầu tạo.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {selectedHotelForRooms.rooms.map((room) => (
-                  <div key={room._id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
-                    <div className="flex gap-3">
-                      <img
-                        src={room.coverImage || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=500'}
-                        alt={room.name}
-                        className="w-20 h-20 rounded-xl object-cover shrink-0 border border-slate-200"
-                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=500'; }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-bold text-xs text-slate-900 truncate">{room.name}</h4>
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                            room.isLocked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
-                          }`}>
-                            {room.isLocked ? 'Khóa bán' : 'Đang mở'}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{room.type} • {room.bedType}</p>
-                        <p className="text-[11px] font-bold text-teal-700 mt-1">
-                          Ngày thường: {formatVND(room.pricePerNight)}
-                        </p>
-                        <p className="text-[10px] text-amber-600 font-semibold">
-                          DIFF 2026: {formatVND(room.diffFestivalPrice || room.pricePerNight)}
-                        </p>
-                      </div>
-                    </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs text-slate-600 bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200/80">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold select-none">
+                    <input 
+                      type="checkbox"
+                      checked={selectedHotelForRooms.rooms.length > 0 && selectedRoomIds.length === selectedHotelForRooms.rooms.length}
+                      onChange={() => toggleSelectAll(selectedHotelForRooms.rooms.map(r => r._id), selectedRoomIds, setSelectedRoomIds)}
+                      className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                    />
+                    <span>Chọn tất cả ({selectedHotelForRooms.rooms.length} hạng phòng)</span>
+                  </label>
 
-                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px] text-slate-500">
-                      <span>Trống: <strong>{room.availableRooms} / {room.totalRooms}</strong> phòng</span>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleToggleRoomLock(room._id)}
-                          className={`p-1.5 rounded-lg text-xs font-bold ${
-                            room.isLocked ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                          }`}
-                          title={room.isLocked ? 'Mở bán phòng' : 'Tạm khóa phòng'}
-                        >
-                          {room.isLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                        </button>
-                        <button
-                          onClick={() => handleOpenEditRoom(room)}
-                          className="px-2.5 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 font-bold rounded-lg flex items-center gap-1"
-                        >
-                          <Edit3 className="w-3 h-3" /> Sửa
-                        </button>
-                        <button
-                          onClick={() => handleDeleteRoom(room._id)}
-                          className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                  {selectedRoomIds.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setSelectedRoomIds([])}
+                        className="text-slate-400 hover:text-slate-700 underline text-xs"
+                      >
+                        Bỏ chọn ({selectedRoomIds.length})
+                      </button>
+                      <button
+                        disabled={bulkDeleting}
+                        onClick={handleBulkDeleteRooms}
+                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center gap-1 shadow-sm"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        {bulkDeleting ? 'Đang xóa...' : `Xóa ${selectedRoomIds.length} phòng đã chọn`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedHotelForRooms.rooms.map((room) => (
+                    <div key={room._id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3 relative hover:shadow-sm transition-shadow">
+                      <div className="flex gap-3">
+                        <div className="relative shrink-0">
+                          <img
+                            src={room.coverImage || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=500'}
+                            alt={room.name}
+                            className="w-20 h-20 rounded-xl object-cover border border-slate-200"
+                            onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=500'; }}
+                          />
+                          <input
+                            type="checkbox"
+                            checked={selectedRoomIds.includes(room._id)}
+                            onChange={(e) => { e.stopPropagation(); toggleSelect(room._id, selectedRoomIds, setSelectedRoomIds); }}
+                            className="absolute top-1 left-1 w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer shadow"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-xs text-slate-900 truncate">{room.name}</h4>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                              room.isLocked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                            }`}>
+                              {room.isLocked ? 'Khóa bán' : 'Đang mở'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">{room.type} • {room.bedType}</p>
+                          <p className="text-[11px] font-bold text-teal-700 mt-1">
+                            Ngày thường: {formatVND(room.pricePerNight)}
+                          </p>
+                          <p className="text-[10px] text-amber-600 font-semibold">
+                            DIFF 2026: {formatVND(room.diffFestivalPrice || room.pricePerNight)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px] text-slate-500">
+                        <span>Trống: <strong>{room.availableRooms} / {room.totalRooms}</strong> phòng</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleToggleRoomLock(room._id)}
+                            className={`p-1.5 rounded-lg text-xs font-bold ${
+                              room.isLocked ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                            }`}
+                            title={room.isLocked ? 'Mở bán phòng' : 'Tạm khóa phòng'}
+                          >
+                            {room.isLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            onClick={() => handleOpenEditRoom(room)}
+                            className="px-2.5 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 font-bold rounded-lg flex items-center gap-1"
+                          >
+                            <Edit3 className="w-3 h-3" /> Sửa
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRoom(room._id)}
+                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -2998,6 +3327,56 @@ export default function AdminDashboard() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Floating Bulk Action Bar */}
+      {((activeTab === 'destinations' && selectedDestIds.length > 0) ||
+        (activeTab === 'hotels' && selectedHotelIds.length > 0) ||
+        (activeTab === 'banners' && selectedBannerIds.length > 0) ||
+        (activeTab === 'vouchers' && selectedVoucherIds.length > 0)) && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 border border-slate-700 animate-in slide-in-from-bottom-5">
+          <div className="flex items-center gap-2 font-bold text-xs">
+            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+            <span>
+              Đã chọn{' '}
+              <strong className="text-purple-300">
+                {activeTab === 'destinations' && selectedDestIds.length}
+                {activeTab === 'hotels' && selectedHotelIds.length}
+                {activeTab === 'banners' && selectedBannerIds.length}
+                {activeTab === 'vouchers' && selectedVoucherIds.length}
+              </strong>{' '}
+              mục
+            </span>
+          </div>
+
+          <div className="h-4 w-px bg-slate-700" />
+
+          <button
+            onClick={() => {
+              if (activeTab === 'destinations') setSelectedDestIds([]);
+              if (activeTab === 'hotels') setSelectedHotelIds([]);
+              if (activeTab === 'banners') setSelectedBannerIds([]);
+              if (activeTab === 'vouchers') setSelectedVoucherIds([]);
+            }}
+            className="text-xs text-slate-400 hover:text-white transition-colors"
+          >
+            Bỏ chọn
+          </button>
+
+          <button
+            disabled={bulkDeleting}
+            onClick={() => {
+              if (activeTab === 'destinations') handleBulkDeleteDest();
+              if (activeTab === 'hotels') handleBulkDeleteHotels();
+              if (activeTab === 'banners') handleBulkDeleteBanners();
+              if (activeTab === 'vouchers') handleBulkDeleteVouchers();
+            }}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {bulkDeleting ? 'Đang xóa...' : 'Xóa tất cả đã chọn'}
+          </button>
         </div>
       )}
 

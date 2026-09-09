@@ -19,7 +19,8 @@ import {
   Edit3,
   Trash2,
   Settings,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Check
 } from 'lucide-react';
 import api from '../../services/api';
 import QRScannerModal from '../../components/QRScannerModal';
@@ -44,6 +45,8 @@ export default function HotelierDashboard() {
   const [isAddRoomOpen, setIsAddRoomOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [isEditRoomOpen, setIsEditRoomOpen] = useState(false);
+  const [selectedRoomIds, setSelectedRoomIds] = useState([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // New room form state
   const [newRoom, setNewRoom] = useState({
@@ -289,10 +292,30 @@ export default function HotelierDashboard() {
       const res = await api.delete(`/rooms/${roomId}`);
       if (res.data.success) {
         alert('Đã xóa hạng phòng thành công!');
+        setSelectedRoomIds(prev => prev.filter(id => id !== roomId));
         if (selectedHotel) fetchRooms(selectedHotel._id);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Không thể xóa phòng');
+    }
+  };
+
+  // Bulk Delete Rooms
+  const handleBulkDeleteRooms = async () => {
+    if (selectedRoomIds.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedRoomIds.length} hạng phòng đã chọn không?`)) return;
+    setBulkDeleting(true);
+    try {
+      const res = await api.post('/rooms/bulk-delete', { ids: selectedRoomIds });
+      if (res.data.success) {
+        alert(res.data.message);
+        setSelectedRoomIds([]);
+        if (selectedHotel) fetchRooms(selectedHotel._id);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt phòng');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -664,83 +687,134 @@ export default function HotelierDashboard() {
 
           {loadingRooms ? (
             <div className="text-center py-12">Đang tải danh sách phòng...</div>
+          ) : rooms.length === 0 ? (
+            <div className="bg-white p-8 rounded-3xl border text-center text-xs text-slate-400">
+              Chưa có hạng phòng nào. Hãy thêm hạng phòng mới cho khách sạn của bạn!
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {rooms.map((room) => (
-                <div key={room._id} className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
-                  <div>
-                    <div className="relative h-48 bg-slate-100">
-                      <img 
-                        src={room.coverImage} 
-                        alt={room.name} 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.src = 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80';
-                        }}
-                      />
-                      <div className="absolute top-3 left-3 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase">
-                        Hạng {room.type}
-                      </div>
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleToggleLock(room._id)}
-                          title={room.isLocked ? "Mở bán lại" : "Khóa phòng"}
-                          className={`p-1.5 rounded-xl shadow-md ${room.isLocked ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-slate-600 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <label className="flex items-center gap-2 cursor-pointer font-bold select-none">
+                  <input 
+                    type="checkbox"
+                    checked={rooms.length > 0 && selectedRoomIds.length === rooms.length}
+                    onChange={() => {
+                      if (selectedRoomIds.length === rooms.length) {
+                        setSelectedRoomIds([]);
+                      } else {
+                        setSelectedRoomIds(rooms.map(r => r._id));
+                      }
+                    }}
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span>Chọn tất cả ({rooms.length} hạng phòng)</span>
+                </label>
+                {selectedRoomIds.length > 0 && (
+                  <button
+                    onClick={() => setSelectedRoomIds([])}
+                    className="text-slate-400 hover:text-slate-700 underline text-xs"
+                  >
+                    Bỏ chọn ({selectedRoomIds.length})
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rooms.map((room) => (
+                  <div key={room._id} className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm flex flex-col justify-between group hover:shadow-md transition-all">
+                    <div>
+                      <div className="relative h-48 bg-slate-100">
+                        <img 
+                          src={room.coverImage} 
+                          alt={room.name} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80';
+                          }}
+                        />
+
+                        {/* Selection Checkbox */}
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedRoomIds(prev => 
+                              prev.includes(room._id) ? prev.filter(id => id !== room._id) : [...prev, room._id]
+                            );
+                          }}
+                          className={`absolute top-3 left-3 w-7 h-7 rounded-xl flex items-center justify-center cursor-pointer transition-all z-20 shadow-md ${
+                            selectedRoomIds.includes(room._id) 
+                              ? 'bg-blue-600 text-white ring-2 ring-white scale-110' 
+                              : 'bg-black/50 hover:bg-black/70 text-white border border-white/40'
+                          }`}
+                          title={selectedRoomIds.includes(room._id) ? "Bỏ chọn" : "Chọn để xóa"}
                         >
-                          {room.isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                          {selectedRoomIds.includes(room._id) && <Check className="w-4 h-4 stroke-[3]" />}
+                        </div>
+
+                        <div className="absolute top-3 left-12 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase">
+                          Hạng {room.type}
+                        </div>
+                        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleToggleLock(room._id)}
+                            title={room.isLocked ? "Mở bán lại" : "Khóa phòng"}
+                            className={`p-1.5 rounded-xl shadow-md ${room.isLocked ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}
+                          >
+                            {room.isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="p-5 space-y-3">
+                        <h4 className="font-black text-base text-slate-900 line-clamp-1">{room.name}</h4>
+                        <p className="text-xs text-slate-500">{room.bedType} • {room.roomSize} m² • {room.standardGuests} khách</p>
+
+                        <div className="space-y-1 text-xs pt-1 border-t border-slate-100">
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Giá ngày thường:</span>
+                            <span className="font-bold text-slate-900">{formatVND(room.pricePerNight)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Giá cuối tuần:</span>
+                            <span className="font-bold text-blue-700">{formatVND(room.weekendPrice || room.pricePerNight)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Mùa DIFF (Pháo hoa):</span>
+                            <span className="font-bold text-amber-600">{formatVND(room.diffFestivalPrice || room.pricePerNight)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-5 pt-0 space-y-3">
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                        <span className="text-xs text-slate-500">
+                          Còn trống: <span className="font-bold text-emerald-600">{room.availableRooms}/{room.totalRooms}</span>
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${room.isLocked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                          {room.isLocked ? 'Đang khóa' : 'Đang mở bán'}
+                        </span>
+                      </div>
+
+                      {/* Action buttons: Edit and Delete */}
+                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                        <button
+                          onClick={() => handleOpenEditRoom(room)}
+                          className="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" /> Sửa thông tin
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRoom(room._id)}
+                          className="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Xóa phòng
                         </button>
                       </div>
                     </div>
-
-                    <div className="p-5 space-y-3">
-                      <h4 className="font-black text-base text-slate-900 line-clamp-1">{room.name}</h4>
-                      <p className="text-xs text-slate-500">{room.bedType} • {room.roomSize} m² • {room.standardGuests} khách</p>
-
-                      <div className="space-y-1 text-xs pt-1 border-t border-slate-100">
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Giá ngày thường:</span>
-                          <span className="font-bold text-slate-900">{formatVND(room.pricePerNight)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Giá cuối tuần:</span>
-                          <span className="font-bold text-blue-700">{formatVND(room.weekendPrice || room.pricePerNight)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500">Mùa DIFF (Pháo hoa):</span>
-                          <span className="font-bold text-amber-600">{formatVND(room.diffFestivalPrice || room.pricePerNight)}</span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
-
-                  <div className="p-5 pt-0 space-y-3">
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                      <span className="text-xs text-slate-500">
-                        Còn trống: <span className="font-bold text-emerald-600">{room.availableRooms}/{room.totalRooms}</span>
-                      </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${room.isLocked ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                        {room.isLocked ? 'Đang khóa' : 'Đang mở bán'}
-                      </span>
-                    </div>
-
-                    {/* Action buttons: Edit and Delete */}
-                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                      <button
-                        onClick={() => handleOpenEditRoom(room)}
-                        className="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" /> Sửa thông tin
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRoom(room._id)}
-                        className="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Xóa phòng
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -1341,6 +1415,36 @@ export default function HotelierDashboard() {
         onClose={() => setIsScannerOpen(false)}
         onScanSuccess={(code) => handleLookup(code)}
       />
+
+      {/* Floating Bulk Action Bar */}
+      {activeTab === 'rooms' && selectedRoomIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-4 border border-slate-700 animate-in slide-in-from-bottom-5">
+          <div className="flex items-center gap-2 font-bold text-xs">
+            <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+            <span>
+              Đã chọn <strong className="text-blue-300">{selectedRoomIds.length}</strong> hạng phòng
+            </span>
+          </div>
+
+          <div className="h-4 w-px bg-slate-700" />
+
+          <button
+            onClick={() => setSelectedRoomIds([])}
+            className="text-xs text-slate-400 hover:text-white transition-colors"
+          >
+            Bỏ chọn
+          </button>
+
+          <button
+            disabled={bulkDeleting}
+            onClick={handleBulkDeleteRooms}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {bulkDeleting ? 'Đang xóa...' : 'Xóa tất cả đã chọn'}
+          </button>
+        </div>
+      )}
 
     </div>
   );

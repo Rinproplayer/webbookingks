@@ -178,6 +178,27 @@ const deleteHotel = async (req, res, next) => {
   }
 };
 
+// @desc Bulk soft delete hotels
+// @route POST /api/hotels/bulk-delete
+const bulkDeleteHotels = async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn ít nhất một khách sạn để xóa' });
+    }
+
+    let filter = { _id: { $in: ids } };
+    if (req.user.role !== 'admin') {
+      filter.owner = req.user.id;
+    }
+
+    await Hotel.updateMany(filter, { isDeleted: true });
+    res.json({ success: true, message: `Đã xóa thành công ${ids.length} cơ sở lưu trú` });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getHotels,
   getHotelById,
@@ -185,5 +206,6 @@ module.exports = {
   createHotel,
   updateHotel,
   toggleHotelOpen,
-  deleteHotel
+  deleteHotel,
+  bulkDeleteHotels
 };

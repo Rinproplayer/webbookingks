@@ -109,10 +109,40 @@ const toggleVoucher = async (req, res, next) => {
   }
 };
 
+// @desc Admin delete voucher
+// @route DELETE /api/vouchers/:id
+const deleteVoucher = async (req, res, next) => {
+  try {
+    const voucher = await Voucher.findByIdAndDelete(req.params.id);
+    if (!voucher) return res.status(404).json({ success: false, message: 'Không tìm thấy voucher' });
+    res.json({ success: true, message: 'Đã xóa mã voucher thành công' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Admin bulk delete vouchers
+// @route POST /api/vouchers/bulk-delete
+const bulkDeleteVouchers = async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn ít nhất một voucher để xóa' });
+    }
+
+    await Voucher.deleteMany({ _id: { $in: ids } });
+    res.json({ success: true, message: `Đã xóa thành công ${ids.length} mã voucher khuyến mãi` });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getActiveVouchers,
   validateVoucher,
   createVoucher,
   updateVoucher,
-  toggleVoucher
+  toggleVoucher,
+  deleteVoucher,
+  bulkDeleteVouchers
 };

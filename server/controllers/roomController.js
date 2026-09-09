@@ -127,11 +127,28 @@ const deleteRoom = async (req, res, next) => {
   }
 };
 
+// @desc Bulk soft delete rooms
+// @route POST /api/rooms/bulk-delete
+const bulkDeleteRooms = async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn ít nhất một phòng để xóa' });
+    }
+
+    await Room.updateMany({ _id: { $in: ids } }, { isDeleted: true });
+    res.json({ success: true, message: `Đã xóa thành công ${ids.length} hạng phòng` });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getRoomsByHotel,
   getRoomById,
   createRoom,
   updateRoom,
   toggleLockRoom,
-  deleteRoom
+  deleteRoom,
+  bulkDeleteRooms
 };

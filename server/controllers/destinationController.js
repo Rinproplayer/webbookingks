@@ -126,11 +126,28 @@ const deleteDestination = async (req, res, next) => {
   }
 };
 
+// @desc Admin bulk soft delete destinations
+// @route POST /api/destinations/bulk-delete
+const bulkDeleteDestinations = async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn ít nhất một điểm đến để xóa' });
+    }
+
+    await Destination.updateMany({ _id: { $in: ids } }, { isDeleted: true });
+    res.json({ success: true, message: `Đã xóa thành công ${ids.length} điểm đến du lịch` });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDestinations,
   getDestinationDetail,
   toggleWishlist,
   createDestination,
   updateDestination,
-  deleteDestination
+  deleteDestination,
+  bulkDeleteDestinations
 };

@@ -114,11 +114,28 @@ const deleteBanner = async (req, res, next) => {
   }
 };
 
+// @desc Admin bulk delete banners
+// @route POST /api/banners/bulk-delete
+const bulkDeleteBanners = async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn ít nhất một banner để xóa' });
+    }
+
+    await Banner.deleteMany({ _id: { $in: ids } });
+    res.json({ success: true, message: `Đã xóa thành công ${ids.length} banner quảng cáo` });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getBanners,
   getAllBannersAdmin,
   createBanner,
   updateBanner,
   toggleBannerActive,
-  deleteBanner
+  deleteBanner,
+  bulkDeleteBanners
 };

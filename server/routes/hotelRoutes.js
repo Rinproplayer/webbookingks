@@ -7,7 +7,8 @@ const {
   createHotel,
   updateHotel,
   toggleHotelOpen,
-  deleteHotel
+  deleteHotel,
+  bulkDeleteHotels
 } = require('../controllers/hotelController');
 const { protect, authorize } = require('../middlewares/auth');
 
@@ -16,6 +17,7 @@ router.get('/owner/me', protect, authorize('hotelier', 'admin'), getMyHotels);
 router.get('/:id', getHotelById);
 
 router.post('/', protect, authorize('hotelier', 'admin'), createHotel);
+router.post('/bulk-delete', protect, authorize('hotelier', 'admin'), bulkDeleteHotels);
 router.put('/:id', protect, authorize('hotelier', 'admin'), updateHotel);
 router.put('/:id/toggle-open', protect, authorize('hotelier', 'admin'), toggleHotelOpen);
 router.delete('/:id', protect, authorize('hotelier', 'admin'), deleteHotel);

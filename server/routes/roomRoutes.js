@@ -6,7 +6,8 @@ const {
   createRoom,
   updateRoom,
   toggleLockRoom,
-  deleteRoom
+  deleteRoom,
+  bulkDeleteRooms
 } = require('../controllers/roomController');
 const { protect, authorize } = require('../middlewares/auth');
 
@@ -14,6 +15,7 @@ router.get('/hotel/:hotelId', getRoomsByHotel);
 router.get('/:id', getRoomById);
 
 router.post('/', protect, authorize('hotelier', 'admin'), createRoom);
+router.post('/bulk-delete', protect, authorize('hotelier', 'admin'), bulkDeleteRooms);
 router.put('/:id', protect, authorize('hotelier', 'admin'), updateRoom);
 router.put('/:id/toggle-lock', protect, authorize('hotelier', 'admin'), toggleLockRoom);
 router.delete('/:id', protect, authorize('hotelier', 'admin'), deleteRoom);
