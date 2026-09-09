@@ -154,6 +154,72 @@ const changePassword = async (req, res, next) => {
   }
 };
 
+// @desc Forgot password - send OTP
+// @route POST /api/auth/forgot-password
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Vui lòng cung cấp email' });
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản với email này' });
+    }
+
+    // Generate 6 digit OTP
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetPasswordToken = resetCode;
+    user.resetPasswordExpire = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    await user.save();
+
+    const { sendPasswordResetEmail } = require('../utils/emailService');
+    await sendPasswordResetEmail(user, resetCode);
+
+    res.json({
+      success: true,
+      message: 'Mã xác thực đặt lại mật khẩu đã được gửi đến email của bạn'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Reset password with OTP
+// @route POST /api/auth/reset-password
+const resetPassword = async (req, res, next) => {
+  try {
+    const { email, resetCode, newPassword } = req.body;
+    if (!email || !resetCode || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp đầy đủ email, mã OTP và mật khẩu mới' });
+    }
+
+    const user = await User.findOne({
+      email,
+      resetPasswordToken: resetCode,
+      resetPasswordExpire: { $gt: new Date() }
+    }).select('+password');
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Mã xác thực không hợp lệ hoặc đã hết hạn' });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay.',
+      token
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc Register partner / hotelier request
 // @route POST /api/auth/partner-register
 const registerPartner = async (req, res, next) => {
@@ -259,6 +325,8 @@ module.exports = {
   getMe,
   updateProfile,
   changePassword,
+  forgotPassword,
+  resetPassword,
   registerPartner,
   getAllUsers,
   toggleUserBlock,

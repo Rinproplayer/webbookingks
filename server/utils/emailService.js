@@ -463,7 +463,50 @@ const sendCheckInReminder = async (bookingInput) => {
   }
 };
 
+/**
+ * Send Password Reset OTP Email
+ */
+const sendPasswordResetEmail = async (user, resetCode) => {
+  try {
+    const transporter = await getTransporter();
+    const fromAddress = process.env.EMAIL_FROM || '"Hostay Đà Nẵng" <nguyendangcap122005@gmail.com>';
+
+    const htmlContent = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
+        <div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 30px 24px; text-align: center; color: white;">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700;">Hostay Đà Nẵng</h1>
+          <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 14px;">Yêu cầu đặt lại mật khẩu tài khoản</p>
+        </div>
+        <div style="padding: 30px 24px; color: #334155;">
+          <p style="font-size: 16px; margin: 0 0 16px 0;">Xin chào <strong>${user.name}</strong>,</p>
+          <p style="font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản liên kết với email này. Dưới đây là mã xác thực (OTP) của bạn (có hiệu lực trong 15 phút):</p>
+          <div style="background-color: #f1f5f9; border: 2px dashed #0d9488; border-radius: 8px; padding: 18px; text-align: center; margin-bottom: 24px;">
+            <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #0f766e;">${resetCode}</span>
+          </div>
+          <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin: 0;">Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này hoặc liên hệ với bộ phận hỗ trợ khách hàng Hostay.</p>
+        </div>
+        <div style="background-color: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
+          © 2026 Hostay Đà Nẵng - Nền tảng Đặt phòng & Du lịch Chuyên biệt
+        </div>
+      </div>
+    `;
+
+    const info = await transporter.sendMail({
+      from: fromAddress,
+      to: user.email,
+      subject: `[Hostay Đà Nẵng] Mã xác thực đặt lại mật khẩu: ${resetCode}`,
+      html: htmlContent
+    });
+
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('[EmailService] Failed to send password reset email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   sendBookingConfirmation,
-  sendCheckInReminder
+  sendCheckInReminder,
+  sendPasswordResetEmail
 };

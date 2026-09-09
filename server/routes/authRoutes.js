@@ -6,6 +6,8 @@ const {
   getMe,
   updateProfile,
   changePassword,
+  forgotPassword,
+  resetPassword,
   registerPartner,
   getAllUsers,
   toggleUserBlock,
@@ -15,6 +17,8 @@ const { protect, authorize } = require('../middlewares/auth');
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.put('/change-password', protect, changePassword);
