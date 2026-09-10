@@ -79,7 +79,7 @@ const destinationSchema = new mongoose.Schema({
 
 // Auto generate slug
 destinationSchema.pre('save', function(next) {
-  if (this.isModified('name')) {
+  if (!this.slug) {
     this.slug = this.name
       .toLowerCase()
       .normalize('NFD')

@@ -17,7 +17,12 @@ const syncNewData = async () => {
     // 1. Sync Destinations
     let addedDest = 0;
     for (const d of destinationsData) {
-      const exists = await Destination.findOne({ slug: d.slug });
+      const exists = await Destination.findOne({
+        $or: [
+          { name: d.name },
+          { slug: d.slug }
+        ]
+      });
       if (!exists) {
         await Destination.create(d);
         addedDest++;
