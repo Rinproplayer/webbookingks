@@ -87,15 +87,12 @@ const PORT = process.env.PORT || 5000;
 
 // Connect to Database and start server
 connectDB().then(async () => {
-  // Check if initial seed is needed or run smart auto-sync
+  // Check if initial seed is needed on a completely fresh database
   try {
     const userCount = await User.countDocuments();
     if (userCount === 0) {
       console.log('[Server] Database is empty. Running initial Da Nang data seed...');
       await seedData();
-    } else {
-      console.log('[Server] Database exists. Running smart auto-sync for any new destinations & hotels...');
-      await syncNewData();
     }
   } catch (seedErr) {
     console.warn('[Server] Seed check error:', seedErr.message);
