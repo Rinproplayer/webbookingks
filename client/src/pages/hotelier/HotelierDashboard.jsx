@@ -306,11 +306,23 @@ export default function HotelierDashboard() {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedRoomIds.length} hạng phòng đã chọn không?`)) return;
     setBulkDeleting(true);
     try {
-      const res = await api.post('/rooms/bulk-delete', { ids: selectedRoomIds });
-      if (res.data.success) {
-        alert(res.data.message);
-        setSelectedRoomIds([]);
-        if (selectedHotel) fetchRooms(selectedHotel._id);
+      try {
+        const res = await api.post('/rooms/bulk-delete', { ids: selectedRoomIds });
+        if (res.data.success) {
+          alert(res.data.message);
+          setSelectedRoomIds([]);
+          if (selectedHotel) fetchRooms(selectedHotel._id);
+          return;
+        }
+      } catch (postErr) {
+        if (postErr.response?.status === 404) {
+          await Promise.all(selectedRoomIds.map(id => api.delete(`/rooms/${id}`)));
+          alert(`Đã xóa thành công ${selectedRoomIds.length} hạng phòng`);
+          setSelectedRoomIds([]);
+          if (selectedHotel) fetchRooms(selectedHotel._id);
+          return;
+        }
+        throw postErr;
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt phòng');

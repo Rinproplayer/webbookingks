@@ -452,11 +452,23 @@ export default function AdminDashboard() {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedBannerIds.length} banner đã chọn không?`)) return;
     setBulkDeleting(true);
     try {
-      const res = await api.post('/banners/bulk-delete', { ids: selectedBannerIds });
-      if (res.data.success) {
-        alert(res.data.message);
-        setSelectedBannerIds([]);
-        fetchBanners();
+      try {
+        const res = await api.post('/banners/bulk-delete', { ids: selectedBannerIds });
+        if (res.data.success) {
+          alert(res.data.message);
+          setSelectedBannerIds([]);
+          fetchBanners();
+          return;
+        }
+      } catch (postErr) {
+        if (postErr.response?.status === 404) {
+          await Promise.all(selectedBannerIds.map(id => api.delete(`/banners/${id}`)));
+          alert(`Đã xóa thành công ${selectedBannerIds.length} banner`);
+          setSelectedBannerIds([]);
+          fetchBanners();
+          return;
+        }
+        throw postErr;
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt banner');
@@ -604,11 +616,23 @@ export default function AdminDashboard() {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedHotelIds.length} cơ sở lưu trú đã chọn không? Các phòng liên quan sẽ bị ẩn.`)) return;
     setBulkDeleting(true);
     try {
-      const res = await api.post('/hotels/bulk-delete', { ids: selectedHotelIds });
-      if (res.data.success) {
-        alert(res.data.message);
-        setSelectedHotelIds([]);
-        fetchHotels();
+      try {
+        const res = await api.post('/hotels/bulk-delete', { ids: selectedHotelIds });
+        if (res.data.success) {
+          alert(res.data.message);
+          setSelectedHotelIds([]);
+          fetchHotels();
+          return;
+        }
+      } catch (postErr) {
+        if (postErr.response?.status === 404) {
+          await Promise.all(selectedHotelIds.map(id => api.delete(`/hotels/${id}`)));
+          alert(`Đã xóa thành công ${selectedHotelIds.length} cơ sở lưu trú`);
+          setSelectedHotelIds([]);
+          fetchHotels();
+          return;
+        }
+        throw postErr;
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt khách sạn');
@@ -721,15 +745,31 @@ export default function AdminDashboard() {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedRoomIds.length} hạng phòng đã chọn không?`)) return;
     setBulkDeleting(true);
     try {
-      const res = await api.post('/rooms/bulk-delete', { ids: selectedRoomIds });
-      if (res.data.success) {
-        alert(res.data.message);
-        setSelectedRoomIds([]);
-        fetchHotels();
-        if (selectedHotelForRooms) {
-          const updated = await api.get(`/hotels/${selectedHotelForRooms._id}`);
-          if (updated.data.success) setSelectedHotelForRooms(updated.data.hotel);
+      try {
+        const res = await api.post('/rooms/bulk-delete', { ids: selectedRoomIds });
+        if (res.data.success) {
+          alert(res.data.message);
+          setSelectedRoomIds([]);
+          fetchHotels();
+          if (selectedHotelForRooms) {
+            const updated = await api.get(`/hotels/${selectedHotelForRooms._id}`);
+            if (updated.data.success) setSelectedHotelForRooms(updated.data.hotel);
+          }
+          return;
         }
+      } catch (postErr) {
+        if (postErr.response?.status === 404) {
+          await Promise.all(selectedRoomIds.map(id => api.delete(`/rooms/${id}`)));
+          alert(`Đã xóa thành công ${selectedRoomIds.length} hạng phòng`);
+          setSelectedRoomIds([]);
+          fetchHotels();
+          if (selectedHotelForRooms) {
+            const updated = await api.get(`/hotels/${selectedHotelForRooms._id}`);
+            if (updated.data.success) setSelectedHotelForRooms(updated.data.hotel);
+          }
+          return;
+        }
+        throw postErr;
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt phòng');
@@ -814,11 +854,23 @@ export default function AdminDashboard() {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedDestIds.length} điểm đến du lịch đã chọn không?`)) return;
     setBulkDeleting(true);
     try {
-      const res = await api.post('/destinations/bulk-delete', { ids: selectedDestIds });
-      if (res.data.success) {
-        alert(res.data.message);
-        setSelectedDestIds([]);
-        fetchDestinations();
+      try {
+        const res = await api.post('/destinations/bulk-delete', { ids: selectedDestIds });
+        if (res.data.success) {
+          alert(res.data.message);
+          setSelectedDestIds([]);
+          fetchDestinations();
+          return;
+        }
+      } catch (postErr) {
+        if (postErr.response?.status === 404) {
+          await Promise.all(selectedDestIds.map(id => api.delete(`/destinations/${id}`)));
+          alert(`Đã xóa thành công ${selectedDestIds.length} điểm đến du lịch`);
+          setSelectedDestIds([]);
+          fetchDestinations();
+          return;
+        }
+        throw postErr;
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt điểm đến');
@@ -846,11 +898,23 @@ export default function AdminDashboard() {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedVoucherIds.length} mã voucher đã chọn không?`)) return;
     setBulkDeleting(true);
     try {
-      const res = await api.post('/vouchers/bulk-delete', { ids: selectedVoucherIds });
-      if (res.data.success) {
-        alert(res.data.message);
-        setSelectedVoucherIds([]);
-        fetchVouchers();
+      try {
+        const res = await api.post('/vouchers/bulk-delete', { ids: selectedVoucherIds });
+        if (res.data.success) {
+          alert(res.data.message);
+          setSelectedVoucherIds([]);
+          fetchVouchers();
+          return;
+        }
+      } catch (postErr) {
+        if (postErr.response?.status === 404) {
+          await Promise.all(selectedVoucherIds.map(id => api.delete(`/vouchers/${id}`)));
+          alert(`Đã xóa thành công ${selectedVoucherIds.length} mã voucher`);
+          setSelectedVoucherIds([]);
+          fetchVouchers();
+          return;
+        }
+        throw postErr;
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi khi xóa hàng loạt voucher');
