@@ -1950,7 +1950,10 @@ export default function AdminDashboard() {
                 </label>
                 <ImageUploader
                   images={newBanner.imageUrl ? [newBanner.imageUrl] : []}
-                  onChange={(imgs) => setNewBanner({ ...newBanner, imageUrl: imgs[0] || '' })}
+                  onChange={(imgs) => {
+                    const url = Array.isArray(imgs) ? (imgs[0] || '') : (imgs || '');
+                    setNewBanner({ ...newBanner, imageUrl: url });
+                  }}
                   maxImages={1}
                   placeholder="Kéo thả ảnh banner vào đây..."
                 />
@@ -2084,7 +2087,10 @@ export default function AdminDashboard() {
                 </label>
                 <ImageUploader
                   images={editingBanner.imageUrl ? [editingBanner.imageUrl] : []}
-                  onChange={(imgs) => setEditingBanner({ ...editingBanner, imageUrl: imgs[0] || '' })}
+                  onChange={(imgs) => {
+                    const url = Array.isArray(imgs) ? (imgs[0] || '') : (imgs || '');
+                    setEditingBanner({ ...editingBanner, imageUrl: url });
+                  }}
                   maxImages={1}
                   placeholder="Kéo thả ảnh banner vào đây..."
                 />
@@ -2240,7 +2246,10 @@ export default function AdminDashboard() {
                 </label>
                 <ImageUploader
                   images={editingHotel.coverImage ? [editingHotel.coverImage] : []}
-                  onChange={(imgs) => setEditingHotel({ ...editingHotel, coverImage: imgs[0] || '' })}
+                  onChange={(imgs) => {
+                    const url = Array.isArray(imgs) ? (imgs[0] || '') : (imgs || '');
+                    setEditingHotel({ ...editingHotel, coverImage: url });
+                  }}
                   maxImages={1}
                   placeholder="Kéo thả ảnh đại diện khách sạn vào đây..."
                 />
@@ -2444,7 +2453,10 @@ export default function AdminDashboard() {
                 </label>
                 <ImageUploader
                   images={newHotel.coverImage ? [newHotel.coverImage] : []}
-                  onChange={(imgs) => setNewHotel({ ...newHotel, coverImage: imgs[0] || '' })}
+                  onChange={(imgs) => {
+                    const url = Array.isArray(imgs) ? (imgs[0] || '') : (imgs || '');
+                    setNewHotel({ ...newHotel, coverImage: url });
+                  }}
                   maxImages={1}
                   placeholder="Kéo thả ảnh đại diện khách sạn vào đây..."
                 />
@@ -2783,7 +2795,10 @@ export default function AdminDashboard() {
                 </label>
                 <ImageUploader
                   images={editingRoom.coverImage ? [editingRoom.coverImage] : []}
-                  onChange={(imgs) => setEditingRoom({ ...editingRoom, coverImage: imgs[0] || '' })}
+                  onChange={(imgs) => {
+                    const url = Array.isArray(imgs) ? (imgs[0] || '') : (imgs || '');
+                    setEditingRoom({ ...editingRoom, coverImage: url });
+                  }}
                   maxImages={1}
                   placeholder="Kéo thả ảnh phòng vào đây..."
                 />
@@ -2956,7 +2971,10 @@ export default function AdminDashboard() {
                 </label>
                 <ImageUploader
                   images={newRoom.coverImage ? [newRoom.coverImage] : []}
-                  onChange={(imgs) => setNewRoom({ ...newRoom, coverImage: imgs[0] || '' })}
+                  onChange={(imgs) => {
+                    const url = Array.isArray(imgs) ? (imgs[0] || '') : (imgs || '');
+                    setNewRoom({ ...newRoom, coverImage: url });
+                  }}
                   maxImages={1}
                   placeholder="Kéo thả ảnh phòng vào đây..."
                 />
@@ -3108,7 +3126,10 @@ export default function AdminDashboard() {
                 </label>
                 <ImageUploader
                   images={editingDest.coverImage ? [editingDest.coverImage] : []}
-                  onChange={(imgs) => setEditingDest({ ...editingDest, coverImage: imgs[0] || '' })}
+                  onChange={(imgs) => {
+                    const url = Array.isArray(imgs) ? (imgs[0] || '') : (imgs || '');
+                    setEditingDest({ ...editingDest, coverImage: url });
+                  }}
                   maxImages={1}
                   placeholder="Kéo thả ảnh điểm đến vào đây..."
                 />
@@ -3256,7 +3277,10 @@ export default function AdminDashboard() {
                 </label>
                 <ImageUploader
                   images={newDest.coverImage ? [newDest.coverImage] : []}
-                  onChange={(imgs) => setNewDest({ ...newDest, coverImage: imgs[0] || '' })}
+                  onChange={(imgs) => {
+                    const url = Array.isArray(imgs) ? (imgs[0] || '') : (imgs || '');
+                    setNewDest({ ...newDest, coverImage: url });
+                  }}
                   maxImages={1}
                   placeholder="Kéo thả ảnh điểm đến vào đây..."
                 />

@@ -14,6 +14,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust reverse proxy (Render, Cloudflare, Nginx) for HTTPS headers
+app.enable('trust proxy');
+
 // Middlewares
 app.use(cors({
   origin: '*',

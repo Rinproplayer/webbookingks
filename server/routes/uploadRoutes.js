@@ -44,8 +44,10 @@ router.post('/', upload.single('image'), (req, res) => {
     return res.status(400).json({ success: false, message: 'Vui lòng chọn tệp tin hình ảnh' });
   }
 
-  // Build public URL
-  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  // Build public URL with HTTPS support
+  const isHttps = req.headers['x-forwarded-proto'] === 'https' || req.secure || req.get('host')?.includes('onrender.com');
+  const protocol = isHttps ? 'https' : (req.protocol || 'http');
+  const fileUrl = `${protocol}://${req.get('host')}/uploads/${req.file.filename}`;
   res.json({
     success: true,
     message: 'Tải ảnh lên thành công',
@@ -61,7 +63,9 @@ router.post('/multiple', upload.array('images', 10), (req, res) => {
     return res.status(400).json({ success: false, message: 'Vui lòng chọn ít nhất một hình ảnh' });
   }
 
-  const urls = req.files.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+  const isHttps = req.headers['x-forwarded-proto'] === 'https' || req.secure || req.get('host')?.includes('onrender.com');
+  const protocol = isHttps ? 'https' : (req.protocol || 'http');
+  const urls = req.files.map(file => `${protocol}://${req.get('host')}/uploads/${file.filename}`);
   res.json({
     success: true,
     message: `Đã tải lên ${urls.length} hình ảnh`,
