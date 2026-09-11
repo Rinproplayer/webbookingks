@@ -117,6 +117,10 @@ export default function DestinationDetail() {
           <img 
             src={destination.coverImage} 
             alt={destination.name} 
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80';
+            }}
             className="w-full h-full object-cover"
           />
         </div>
@@ -124,12 +128,28 @@ export default function DestinationDetail() {
           {destination.images && destination.images.length > 1 ? (
             destination.images.slice(0, 2).map((img, idx) => (
               <div key={idx} className="rounded-2xl overflow-hidden shadow-sm">
-                <img src={img} alt="detail" className="w-full h-full object-cover" />
+                <img 
+                  src={img} 
+                  alt="detail" 
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80';
+                  }}
+                  className="w-full h-full object-cover" 
+                />
               </div>
             ))
           ) : (
             <div className="row-span-2 rounded-2xl overflow-hidden shadow-sm bg-slate-100">
-              <img src={destination.coverImage} alt="detail" className="w-full h-full object-cover" />
+              <img 
+                src={destination.coverImage} 
+                alt="detail" 
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80';
+                }}
+                className="w-full h-full object-cover" 
+              />
             </div>
           )}
         </div>
